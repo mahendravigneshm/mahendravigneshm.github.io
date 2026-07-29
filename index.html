@@ -63,7 +63,7 @@ label{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chip{padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:14px;cursor:pointer}
 .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-.chip.on.wife{background:var(--marigold);border-color:var(--marigold)}
+.chip.on.Vidhya{background:var(--marigold);border-color:var(--marigold)}
 
 .btn{width:100%;padding:13px;border:none;border-radius:12px;background:var(--green);
   color:#fff;font-size:15.5px;font-weight:600;cursor:pointer;margin-top:14px}
@@ -183,7 +183,7 @@ nav button.on{color:var(--ink);font-weight:600}
     <label>Who is entering?</label>
     <div class="chips" id="whoChips">
       <button type="button" class="chip on" data-who="Mahendra">Mahendra</button>
-      <button type="button" class="chip" data-who="Wife">Wife</button>
+      <button type="button" class="chip" data-who="Vidhya">Vidhya</button>
     </div>
     <label>Type</label>
     <div class="chips" id="typeChips">
@@ -203,7 +203,7 @@ nav button.on{color:var(--ink);font-weight:600}
     <label for="note">Note (optional)</label>
     <input type="text" id="note" placeholder="e.g. Groceries at DMart" maxlength="80">
     <button class="btn" id="saveBtn">Save entry</button>
-    <div class="note" id="saveHint">Saved on this device. Connect Google Drive to sync with your wife.</div>
+    <div class="note" id="saveHint">Saved on this device. Connect Google Drive to sync with your Vidhya.</div>
   </div>
 </section>
 
@@ -212,7 +212,7 @@ nav button.on{color:var(--ink);font-weight:600}
   <h2>Entries</h2>
   <div class="filters">
     <select id="fMonth"><option value="">All months</option></select>
-    <select id="fWho"><option value="">Everyone</option><option>Mahendra</option><option>Wife</option><option value="Bank">Bank history</option></select>
+    <select id="fWho"><option value="">Everyone</option><option>Mahendra</option><option>Vidhya</option><option value="Bank">Bank history</option></select>
     <select id="fCat"><option value="">All categories</option></select>
   </div>
   <div class="card" id="txnList"></div>
@@ -263,7 +263,7 @@ nav button.on{color:var(--ink);font-weight:600}
     <div class="step"><div class="n">4</div><div class="b">Open <code>https://YOURNAME.github.io</code> on any phone. Add it to your home screen and it behaves like an app.</div></div>
   </div>
 
-  <h2>Sharing with your wife</h2>
+  <h2>Sharing with your Vidhya</h2>
   <div class="card">
     <div class="step"><div class="n">1</div><div class="b">Connect Drive here first — that creates the ledger file in your Drive.</div></div>
     <div class="step"><div class="n">2</div><div class="b">Open Google Drive, find <code>vignesh-family-ledger.json</code>, and share it with your wife's Gmail with <strong>Editor</strong> access.</div></div>
@@ -536,7 +536,7 @@ function renderTxns(keep){
     const d=document.createElement("div");d.className="txn";
     const x=new Date(t.date+"T00:00:00");
     const ds=x.getDate()+" "+MB[x.getMonth()]+" '"+String(x.getFullYear()).slice(2);
-    const badge=t.src==="bank"?"B":(t.who==="Wife"?"W":"M");
+    const badge=t.src==="bank"?"B":(t.who==="Vidhya"?"W":"M");
     d.innerHTML=`<div class="dot who-${badge}">${badge}</div>
       <div class="mid"><div class="cat">${t.cat}</div>
       <div class="meta">${[ds,t.mode,t.note].filter(Boolean).join(" · ")}</div></div>
@@ -626,7 +626,7 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
 });
 $("whoChips").onclick=e=>{const c=e.target.closest(".chip");if(!c)return;who=c.dataset.who;
   $("whoChips").querySelectorAll(".chip").forEach(x=>{x.classList.toggle("on",x===c);
-    x.classList.toggle("wife",x===c&&who==="Wife")})};
+    x.classList.toggle("Vidhya",x===c&&who==="Vidhya")})};
 $("typeChips").onclick=e=>{const c=e.target.closest(".chip");if(!c)return;etype=c.dataset.type;
   $("typeChips").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===c));
   $("cat").disabled=etype==="income"};
