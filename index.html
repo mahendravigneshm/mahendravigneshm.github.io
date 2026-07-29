@@ -134,6 +134,25 @@ color:var(--muted);font-weight:600;position:sticky;top:0}
 .editbar{display:flex;gap:8px;margin-top:10px}
 .editbar .btn{margin-top:0}
 .txn .ed{background:none;border:none;color:#9AA5B1;font-size:15px;cursor:pointer;padding:4px 5px}
+#insightBox{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:6px 0 14px}
+#insightBox summary{padding:14px;cursor:pointer;font-family:"Fraunces",Georgia,serif;font-weight:600;
+font-size:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;list-style:none}
+#insightBox summary::-webkit-details-marker{display:none}
+#insightBox summary::after{content:"▾";font-family:inherit;color:var(--muted);font-size:13px;margin-left:auto;order:3}
+#insightBox[open] summary::after{content:"▴"}
+.ibadge{background:var(--marigold);color:#fff;border-radius:999px;padding:1px 9px;font-size:12px;
+font-family:-apple-system,sans-serif;font-weight:600;order:2}
+#insights{padding:0 14px 14px}
+.excl{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);
+margin:0 0 10px;cursor:pointer;text-transform:none;letter-spacing:0}
+.excl input{width:auto;margin:0}
+.ins{padding:11px 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.55}
+.ins:first-child{border-top:none}
+.ins b{display:block;margin-bottom:2px}
+.ins .k{display:inline-block;font-size:10px;text-transform:uppercase;letter-spacing:.5px;
+padding:1px 7px;border-radius:4px;margin-bottom:5px;font-weight:600}
+.k.red{background:#FDEEEB;color:#B5402C}.k.amber{background:#FFF8E6;color:#8A6314}
+.k.green{background:#EAF6EF;color:#217A54}.k.blue{background:#EDF3FA;color:#2A5B8C}
 .note{font-size:12px;color:var(--muted);line-height:1.55;margin-top:9px}
 .chartbox{position:relative;height:230px}.chartbox.tall{height:275px}
 .empty{text-align:center;color:var(--muted);font-size:14px;padding:24px 10px;line-height:1.6}
@@ -185,7 +204,6 @@ color:var(--muted);font-weight:600;position:sticky;top:0}
     Tap <strong>Setup</strong> at the bottom, then <strong>Import history, or restore a backup</strong>,
     and choose the file <code>ledger-history.json</code>. Your 3,364 past entries and all charts appear straight away.
   </div>
-  <div id="insights"></div>
   <div class="msel">
     <select id="dashMonth" aria-label="Select month"></select>
     <span class="t">Dashboard for this month</span>
@@ -203,6 +221,11 @@ color:var(--muted);font-weight:600;position:sticky;top:0}
     <div id="donutLegend"></div></div>
   <h2>Budget check</h2>
   <div class="card" id="budgetCheck"></div>
+
+  <details id="insightBox">
+    <summary><span>Insights &amp; analysis</span><span class="ibadge" id="insightCount">0</span></summary>
+    <div id="insights"></div>
+  </details>
 </section>
 
 <!-- ADD -->
@@ -260,6 +283,8 @@ color:var(--muted);font-weight:600;position:sticky;top:0}
     </select>
     <span class="t">Tap a name in the key to hide that line</span>
   </div>
+  <label class="excl"><input type="checkbox" id="exclOneoff" checked>
+    <span>Exclude one-off purchases &amp; transfers</span></label>
   <div class="card"><div class="chartbox tall"><canvas id="chTop"></canvas></div></div>
   <div class="card" style="padding:0"><div id="topTable" class="scrollx"></div></div>
 
@@ -386,6 +411,8 @@ Food:3500,Grocery:3500,Shopping:4000,Travel:3000,Fuel:2500,Snacks:2000,Cash:1000
 Selfcare:500,Movie:500,"Home needs":500,Recharge:1000,Medical:1500,"Bike service":500,
 "Gas Cylinder":300,"Repair Charges":200};
 const PALETTE=["#1C2B3A","#217A54","#D98E2B","#B5402C","#5B7C99","#8C6BAA","#3E8E8E","#A67C52","#6B7280"];
+const ONEOFF=["Marriage","Bike","Mobile","Education"];
+const NONSPEND=["Lending","Lending repayment","Reimburse"];
 const LINEPAL=["#1C2B3A","#B5402C","#217A54","#D98E2B","#5B7C99","#8C6BAA","#3E8E8E","#C97B84","#A67C52","#4E6E58"];
 const MB=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const FILE_NAME="vignesh-family-ledger.json";
@@ -744,6 +771,7 @@ $("typeChips").onclick=e=>{const c=e.target.closest(".chip");if(!c)return;etype=
 $("dashMonth").onchange=renderDash;
 $("trendRange").onchange=renderMatrix;
 $("topN").onchange=renderTopTrend;
+$("exclOneoff").onchange=()=>{renderTopTrend();renderMatrix()};
 $("trendCat").onchange=()=>renderCatChart(trendMonths(),buildMatrix(trendMonths()));
 $("fMonth").onchange=()=>renderTxns();
 $("fWho").onchange=()=>renderTxns();
@@ -813,11 +841,13 @@ function buildMatrix(months){
   return idx;
 }
 function last12(){ const a=allMonths(); return a.slice(-12); }
+function skipCats(){return $("exclOneoff").checked?ONEOFF.concat(NONSPEND):[]}
 function renderTopTrend(){
   const months=last12(); if(!months.length)return;
-  const idx=buildMatrix(months);
+  const idx=buildMatrix(months),skip=skipCats();
   const n=parseInt($("topN").value)||10;
-  const ranked=Object.entries(idx).map(([c,a])=>({c,a,tot:a.reduce((s,v)=>s+v,0)}))
+  const ranked=Object.entries(idx).filter(([c])=>!skip.includes(c))
+    .map(([c,a])=>({c,a,tot:a.reduce((s,v)=>s+v,0)}))
     .filter(r=>r.tot>0).sort((x,y)=>y.tot-x.tot).slice(0,n);
   if(!ranked.length){$("topTable").innerHTML='<div class="empty">No data yet.</div>';return}
 
@@ -862,7 +892,9 @@ function trendMonths(){
 }
 function renderMatrix(){
   const months=trendMonths(),idx=buildMatrix(months);
-  const rows=Object.entries(idx).map(([c,a])=>({c,a,tot:a.reduce((s,v)=>s+v,0)}))
+  const skip=skipCats();
+  const rows=Object.entries(idx).filter(([c])=>!skip.includes(c))
+    .map(([c,a])=>({c,a,tot:a.reduce((s,v)=>s+v,0)}))
     .filter(r=>r.tot>0).sort((x,y)=>y.tot-x.tot);
   if(!rows.length){$("matrixWrap").innerHTML='<div class="empty">No data for this period.</div>';return}
   let html='<table class="mtx"><thead><tr><th class="nm">Category</th>'+
@@ -909,51 +941,106 @@ function renderCatChart(months,idx){
         y:{ticks:{font:{size:10},callback:v=>"₹"+Math.round(v/1000)+"K"},grid:{color:"#EFEDE6"}}}}});
 }
 function renderInsights(){
-  const box=$("insights");if(!box)return;
-  const m=$("dashMonth").value;if(!m){box.innerHTML="";return}
+  const box=$("insights"),cnt=$("insightCount");if(!box)return;
+  const m=$("dashMonth").value;
+  if(!m){box.innerHTML="";cnt.textContent="0";return}
   const months=allMonths(),i=months.indexOf(m);
-  const prior=months.slice(Math.max(0,i-3),i);
   const idx=buildMatrix(months);
-  const out=[];
+  const rec=c=>!ONEOFF.includes(c)&&!NONSPEND.includes(c);
   const sp=totalSpend(m),inc=totalIncome(m);
+  const out=[];
+  const add=(k,t,d)=>out.push({k,t,d});
+
+  const hist12=months.slice(Math.max(0,i-12),i);
+  const spends=hist12.map(totalSpend).filter(v=>v>0);
+  const avgSpend=spends.length?spends.reduce((s,v)=>s+v,0)/spends.length:0;
 
   if(inc>0){
     const rate=Math.round((inc-sp)/inc*100);
-    if(rate<0)out.push(["red","!","Spent more than you earned",
-      `${m} spend of ${fmt(sp)} exceeded income of ${fmt(inc)} by ${fmt(sp-inc)}.`]);
-    else if(rate<10)out.push(["amber","!","Very little left over",
-      `You kept only ${rate}% of ${m} income. Aim for 20% or more.`]);
-    else out.push(["green","✓","Healthy month",
-      `You kept ${rate}% of ${m} income — ${fmt(inc-sp)} not spent.`]);
+    if(rate<0)add("red","Spent more than you earned",
+      `${m} spend of ${fmt(sp)} exceeded income of ${fmt(inc)}. Shortfall ${fmt(sp-inc)}, covered from savings or credit.`);
+    else if(rate<10)add("amber","Thin margin this month",
+      `You kept ${rate}% of ${m} income (${fmt(inc-sp)}). A 20% cushion is a healthier target.`);
+    else add("green","Healthy month",`You kept ${rate}% of ${m} income — ${fmt(inc-sp)} unspent.`);
   }
 
-  Object.entries(data.budgets).filter(([,b])=>b>0).forEach(([c,b])=>{
-    const a=spendFor(m,c);
-    if(a>b*1.1)out.push(["red","▲",`${c} over budget`,
-      `${fmt(a)} against a ${fmt(b)} budget — ${fmt(a-b)} over.`]);
+  if(avgSpend>0){
+    const d=Math.round((sp-avgSpend)/avgSpend*100);
+    if(Math.abs(d)>=12)add(d>0?"amber":"blue",
+      d>0?"Above your usual run rate":"Below your usual run rate",
+      `${m} spend of ${fmt(sp)} is ${Math.abs(d)}% ${d>0?"above":"below"} your ${fmt(avgSpend)} average across the previous ${spends.length} months.`);
+  }
+
+  const prior=months.slice(Math.max(0,i-3),i);
+  const rising=[],falling=[];
+  Object.keys(idx).filter(rec).forEach(c=>{
+    const cur=idx[c][i]||0;
+    const pv=prior.map(p=>idx[c][months.indexOf(p)]||0).filter(v=>v>0);
+    if(pv.length<2)return;
+    const avg=pv.reduce((s,v)=>s+v,0)/pv.length;
+    if(avg<500)return;
+    const d=Math.round((cur-avg)/avg*100);
+    if(d>=40&&cur>=2000)rising.push({c,cur,avg,d});
+    else if(d<=-40&&avg>=2000)falling.push({c,cur,avg,d});
   });
+  rising.sort((a,b)=>(b.cur-b.avg)-(a.cur-a.avg));
+  falling.sort((a,b)=>(a.cur-a.avg)-(b.cur-b.avg));
+  if(rising.length)add("amber","Categories trending up",
+    rising.slice(0,4).map(r=>`${r.c} ${fmt(r.cur)} (+${r.d}% vs ${fmt(r.avg)} avg)`).join(" · "));
+  if(falling.length)add("green","Categories trending down",
+    falling.slice(0,4).map(r=>`${r.c} ${fmt(r.cur)} (${r.d}% vs ${fmt(r.avg)} avg)`).join(" · "));
 
-  if(prior.length>=2){
-    Object.keys(idx).forEach(c=>{
-      const cur=idx[c][i]||0;
-      const pv=prior.map(pm=>idx[c][months.indexOf(pm)]||0).filter(v=>v>0);
-      if(!pv.length||cur<3000)return;
-      const avg=pv.reduce((s,v)=>s+v,0)/pv.length;
-      if(avg>0&&cur>avg*1.6)out.push(["amber","▲",`${c} spiked`,
-        `${fmt(cur)} this month vs a ${fmt(avg)} average over the previous ${pv.length} months.`]);
-    });
+  const over=Object.entries(data.budgets).filter(([,b])=>b>0)
+    .map(([c,b])=>({c,b,a:spendFor(m,c)})).filter(r=>r.a>r.b*1.1)
+    .sort((x,y)=>(y.a-y.b)-(x.a-x.b));
+  if(over.length){
+    const tot=over.reduce((s,r)=>s+(r.a-r.b),0);
+    add("red",`${over.length} ${over.length===1?"category":"categories"} over budget`,
+      over.slice(0,5).map(r=>`${r.c} ${fmt(r.a)} vs ${fmt(r.b)}`).join(" · ")+
+      ` — ${fmt(tot)} over in total.`);
   }
 
-  const invB=data.budgets["Investment"]||0, invA=spendFor(m,"Investment");
-  if(invB>0&&invA<invB)out.push(["amber","↓","Investment below target",
-    `${fmt(invA)} invested in ${m} against your ${fmt(invB)} floor. Shortfall ${fmt(invB-invA)}.`]);
+  const invB=data.budgets["Investment"]||0;
+  const inv6=months.slice(Math.max(0,i-5),i+1).map(mm=>idx["Investment"]?(idx["Investment"][months.indexOf(mm)]||0):0);
+  if(invB>0&&inv6.length){
+    const hit=inv6.filter(v=>v>=invB).length;
+    const invA=inv6[inv6.length-1];
+    if(invA<invB)add("amber","Investment below your floor",
+      `${fmt(invA)} in ${m} against a ${fmt(invB)} target. You met the floor in ${hit} of the last ${inv6.length} months.`);
+    else add("green","Investment on track",
+      `${fmt(invA)} invested in ${m}. Floor met in ${hit} of the last ${inv6.length} months.`);
+  }
 
-  const bd=breakdown(m),top=Object.entries(bd).sort((a,b)=>b[1]-a[1])[0];
-  if(top&&sp>0&&top[1]/sp>0.4)out.push(["amber","◉","One category dominates",
-    `${top[0]} is ${Math.round(top[1]/sp*100)}% of ${m} spending (${fmt(top[1])}).`]);
+  const bd=breakdown(m);
+  const recEnt=Object.entries(bd).filter(([c])=>rec(c)).sort((a,b)=>b[1]-a[1]);
+  if(recEnt.length&&sp>0){
+    const t3=recEnt.slice(0,3),s3=t3.reduce((s,e)=>s+e[1],0);
+    add("blue","Where the money concentrated",
+      t3.map(e=>`${e[0]} ${fmt(e[1])}`).join(" · ")+
+      ` — top three are ${Math.round(s3/sp*100)}% of ${m} spending.`);
+  }
 
-  box.innerHTML=out.length?out.slice(0,6).map(([k,ic,t,d])=>
-    `<div class="alert ${k}"><span class="ai">${ic}</span><div><b>${t}</b>${d}</div></div>`).join(""):"";
+  let vol=null;
+  Object.keys(idx).filter(rec).forEach(c=>{
+    const a=hist12.map(mm=>idx[c][months.indexOf(mm)]||0).filter(v=>v>0);
+    if(a.length<4)return;
+    const mu=a.reduce((s,v)=>s+v,0)/a.length;
+    if(mu<1500)return;
+    const sd=Math.sqrt(a.reduce((s,v)=>s+(v-mu)**2,0)/a.length);
+    const cv=sd/mu;
+    if(!vol||cv>vol.cv)vol={c,cv,mu,mx:Math.max(...a)};
+  });
+  if(vol&&vol.cv>0.7)add("blue","Least predictable category",
+    `${vol.c} swings widely — averaging ${fmt(vol.mu)} but peaking at ${fmt(vol.mx)}. Worth a set monthly cap.`);
+
+  const oneoffTot=ONEOFF.reduce((s,c)=>s+(idx[c]?idx[c][i]||0:0),0);
+  if(oneoffTot>0&&sp>0)add("blue","One-off spending this month",
+    `${fmt(oneoffTot)} went to one-time items (${Math.round(oneoffTot/sp*100)}% of the month). These are excluded from trend charts.`);
+
+  cnt.textContent=out.length;
+  box.innerHTML=out.length?out.map(o=>
+    `<div class="ins"><span class="k ${o.k}">${o.k==="red"?"Action":o.k==="amber"?"Watch":o.k==="green"?"Good":"Insight"}</span><b>${o.t}</b>${o.d}</div>`
+  ).join(""):'<div class="ins">Nothing notable for this month.</div>';
 }
 function populateCatFilter(){
   const keep=$("fCat").value;
