@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MV Expense Manager</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 88 100'%3E%3Cpath d='M12,86 L12,24 L31,60 L48,24' fill='none' stroke='%231C2B3A' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M48,24 L62,84 L78,14' fill='none' stroke='%23D98E2B' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<meta name="theme-color" content="#1C2B3A">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'><rect width='44' height='44' rx='12' fill='%23D98E2B'/><path d='M9,30V13L15.5,25L22,13L28.5,32L35,13' fill='none' stroke='%231C2B3A' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
 <style>
@@ -19,7 +23,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 .num{font-variant-numeric:tabular-nums}
 
 header{background:var(--ink);color:#F3F1EA;padding:16px 16px 13px}
-.hrow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.hrow{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{width:42px;height:42px;flex-shrink:0}
+@media(max-width:400px){.logo{width:36px;height:36px}}
 header h1{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:18px}
 header .sub{font-size:10.5px;color:#B9C2CC;margin-top:2px;letter-spacing:.4px;text-transform:uppercase}
 .syncbtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#F3F1EA;
@@ -120,7 +127,23 @@ color:var(--muted);font-weight:600;position:sticky;top:0}
 .trend{font-size:11px;padding:1px 6px;border-radius:5px}
 .up{background:#FDEEEB;color:#B5402C}.dn{background:#EAF6EF;color:#217A54}
 .lgd{display:flex;flex-direction:column;gap:5px;margin-top:12px}
-.lgi{display:flex;align-items:center;gap:8px;font-size:13px}
+.lgi{display:flex;align-items:center;gap:8px;font-size:13px;width:100%;text-align:left;
+background:none;border:none;padding:6px 4px;border-radius:8px;cursor:pointer;color:inherit;font-family:inherit}
+.lgi:hover{background:var(--soft)}
+.lgi[aria-expanded="true"]{background:var(--soft)}
+.lgi .cv{color:var(--muted);font-size:11px;width:11px;text-align:center;transition:transform .15s}
+.lgi[aria-expanded="true"] .cv{transform:rotate(90deg)}
+.lgtot{display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 4px 2px;
+border-top:1px solid var(--line);margin-top:4px}
+.lgdet{padding:2px 4px 10px 23px}
+.lgrow{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.lgrow:last-child{border-bottom:none}
+.lgrow .d{color:var(--muted);width:62px;flex-shrink:0;font-variant-numeric:tabular-nums}
+.lgrow .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lgrow .a{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.lgrow .w{font-size:9.5px;font-weight:700;color:#fff;border-radius:4px;padding:1px 5px;flex-shrink:0}
+.lgmore{font-size:12px;color:var(--muted);padding:7px 0 0}
+.lghint{font-size:11.5px;color:var(--muted);margin-top:9px}
 .lgi .sw{width:11px;height:11px;border-radius:3px;flex-shrink:0}
 .lgi .nm2{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lgi .am{font-variant-numeric:tabular-nums;font-weight:600}
@@ -169,17 +192,36 @@ padding:1px 7px;border-radius:4px;margin-bottom:5px;font-weight:600}
 .banner{background:#FFF8E6;border:1px solid #F0DDA8;border-radius:10px;padding:11px 13px;font-size:13px;line-height:1.55;margin-bottom:12px}
 .banner.ok{background:#EAF6EF;border-color:#B6DFC6}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
-@media(min-width:700px){nav{position:sticky;top:0;bottom:auto;border-top:none;border-bottom:1px solid var(--line)}
-  body{padding-bottom:20px}.toast{bottom:30px}}
+@media(min-width:700px){
+  nav{position:fixed;top:0;left:0;bottom:0;right:auto;width:172px;flex-direction:column;
+    align-items:stretch;border-top:none;border-right:1px solid var(--line);
+    padding:16px 10px;gap:2px;overflow-y:auto}
+  nav button{flex:0 0 auto;flex-direction:row;justify-content:flex-start;align-items:center;
+    gap:11px;padding:11px 13px;font-size:13.5px;border-radius:10px}
+  nav button .ico{font-size:17px;width:20px;text-align:center}
+  nav button:hover{background:var(--soft)}
+  nav button.on{background:var(--ink);color:#fff}
+  nav button.on .ico{transform:none}
+  body{padding-left:172px;padding-bottom:24px}
+  .toast{left:calc(50% + 86px);bottom:30px}
+}
 </style>
 </head>
 <body>
 
 <header>
   <div class="hrow">
-    <div>
-      <h1>MV Expense Manager</h1>
-      <div class="sub">Your data · your Google Drive</div>
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 44 44" role="img" aria-label="M V monogram">
+        <rect x="1" y="1" width="42" height="42" rx="12" fill="#D98E2B"/>
+        <rect x="1" y="1" width="42" height="42" rx="12" fill="none" stroke="#F3F1EA" stroke-opacity=".26" stroke-width="1.5"/>
+        <path d="M9,30 V13 L15.5,25 L22,13 L28.5,32 L35,13" fill="none" stroke="#1C2B3A"
+              stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div>
+        <h1>MV Expense Manager</h1>
+        <div class="sub">Your data · your Google Drive</div>
+      </div>
     </div>
     <button class="syncbtn" id="syncBtn"><span class="dotx"></span><span id="syncTxt">Offline</span></button>
   </div>
@@ -588,14 +630,20 @@ function renderDash(){
     options:{responsive:true,maintainAspectRatio:false,cutout:"58%",
       plugins:{legend:{display:false},
         tooltip:{callbacks:{label:c=>" "+c.label+": "+fmt(c.parsed)+" ("+Math.round(c.parsed/sp*100)+"%)"}}}}});
+  donutOthers=ent.slice(8).map(e=>e[0]);
   const lg=$("donutLegend");
   lg.innerHTML=dv.length?'<div class="lgd">'+dl.map((n,i)=>
-    `<div class="lgi"><span class="sw" style="background:${PALETTE[i%PALETTE.length]}"></span>
-     <span class="nm2">${n}</span><span class="am">${fmt(dv[i])}</span>
-     <span class="pc">${sp?Math.round(dv[i]/sp*100):0}%</span></div>`).join("")+
-    `<div class="lgi" style="border-top:1px solid var(--line);padding-top:7px;margin-top:3px">
-     <span class="sw" style="background:transparent"></span><span class="nm2"><strong>Total</strong></span>
-     <span class="am">${fmt(sp)}</span><span class="pc"></span></div>`+'</div>':"";
+    `<button class="lgi" data-dcat="${n}" aria-expanded="false">
+       <span class="cv">›</span>
+       <span class="sw" style="background:${PALETTE[i%PALETTE.length]}"></span>
+       <span class="nm2">${n}</span><span class="am">${fmt(dv[i])}</span>
+       <span class="pc">${sp?Math.round(dv[i]/sp*100):0}%</span></button>
+     <div class="lgdet" id="dd-${i}" style="display:none"></div>`).join("")+
+    `<div class="lgtot"><span class="cv"></span><span class="sw" style="background:transparent"></span>
+     <span class="nm2"><strong>Total</strong></span><span class="am">${fmt(sp)}</span>
+     <span class="pc"></span></div></div>
+     <div class="lghint">Tap any category to see the entries behind it.</div>`:"";
+  lg.querySelectorAll(".lgi").forEach((b,i)=>b.onclick=()=>toggleDonutCat(b,$("dd-"+i),m));
 
   renderInsights();
   const bc=$("budgetCheck");bc.innerHTML="";
@@ -939,6 +987,43 @@ function renderCatChart(months,idx){
       plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>" "+fmt(x.parsed.y)}}},
       scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45}},
         y:{ticks:{font:{size:10},callback:v=>"₹"+Math.round(v/1000)+"K"},grid:{color:"#EFEDE6"}}}}});
+}
+let donutOthers=[];
+function entriesFor(month,cat){
+  const cats=cat==="Others"?donutOthers:[cat];
+  const out=[];
+  data.txns.forEach(t=>{
+    if(t.type!=="income"&&cats.includes(t.cat)&&monthLabel(t.date)===month)
+      out.push({date:t.date,amt:t.amt,note:t.note||t.mode||"",who:t.who,src:"app",cat:t.cat});
+  });
+  HTX.forEach(x=>{
+    if(cats.includes(x[1])&&monthLabel(x[0])===month&&x[2]>0)
+      out.push({date:x[0],amt:x[2],note:x[4]||"",who:"Bank",src:"bank",cat:x[1]});
+  });
+  return out.sort((a,b)=>b.amt-a.amt);
+}
+function toggleDonutCat(btn,panel,month){
+  const open=btn.getAttribute("aria-expanded")==="true";
+  btn.parentElement.querySelectorAll(".lgi").forEach(o=>o.setAttribute("aria-expanded","false"));
+  btn.parentElement.querySelectorAll(".lgdet").forEach(o=>{o.style.display="none";o.innerHTML=""});
+  if(open)return;
+  btn.setAttribute("aria-expanded","true");
+  const cat=btn.dataset.dcat,rows=entriesFor(month,cat);
+  if(!rows.length){panel.innerHTML='<div class="lgmore">No individual entries recorded.</div>';}
+  else{
+    const show=rows.slice(0,12);
+    panel.innerHTML=show.map(r=>{
+      const d=new Date(r.date+"T00:00:00");
+      const badge=r.src==="bank"?"B":(r.who==="Mahendra"?"M":"V");
+      const bg=r.src==="bank"?"var(--bank)":(r.who==="Mahendra"?"var(--ink)":"var(--marigold)");
+      const label=cat==="Others"?r.cat+(r.note?" · "+r.note:""):(r.note||"—");
+      return `<div class="lgrow"><span class="w" style="background:${bg}">${badge}</span>
+        <span class="d">${d.getDate()} ${MB[d.getMonth()]}</span>
+        <span class="n">${label}</span><span class="a">${fmt(r.amt)}</span></div>`;
+    }).join("")+
+    (rows.length>show.length?`<div class="lgmore">+ ${rows.length-show.length} more · open the Entries tab to see all</div>`:"");
+  }
+  panel.style.display="block";
 }
 function renderInsights(){
   const box=$("insights"),cnt=$("insightCount");if(!box)return;
