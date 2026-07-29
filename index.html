@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vignesh Family Ledger</title>
+<title>MV Expense Ledger</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
 <style>
@@ -132,7 +132,7 @@ nav button.on{color:var(--ink);font-weight:600}
 <header>
   <div class="hrow">
     <div>
-      <h1>Vignesh Family Ledger</h1>
+      <h1>MV Expense Ledger</h1>
       <div class="sub">Your data · your Google Drive</div>
     </div>
     <button class="syncbtn" id="syncBtn"><span class="dotx"></span><span id="syncTxt">Offline</span></button>
@@ -227,7 +227,7 @@ nav button.on{color:var(--ink);font-weight:600}
   <div class="banner" id="setupBanner">
     This page holds <strong>no financial data</strong> — it is only the program. Every entry, and your
     imported history, lives in <strong>your own Google Drive</strong> as
-    <code>vignesh-family-ledger.json</code>. Anyone who opens this page without your Google login sees an empty ledger.
+    <code>MV-expense-ledger.json</code>. Anyone who opens this page without your Google login sees an empty ledger.
   </div>
   <div class="warn" id="histBanner"></div>
 
@@ -261,7 +261,7 @@ nav button.on{color:var(--ink);font-weight:600}
   <h2>Sharing with your wife</h2>
   <div class="card">
     <div class="step"><div class="n">1</div><div class="b">Connect Drive here first — that creates the ledger file in your Drive.</div></div>
-    <div class="step"><div class="n">2</div><div class="b">Open Google Drive, find <code>vignesh-family-ledger.json</code>, and share it with your wife's Gmail with <strong>Editor</strong> access.</div></div>
+    <div class="step"><div class="n">2</div><div class="b">Open Google Drive, find <code>MV-Expense-ledger.json</code>, and share it with your wife's Gmail with <strong>Editor</strong> access.</div></div>
     <div class="step"><div class="n">3</div><div class="b">Send her the same page link. She enters the same Client ID, connects with her own Google account, and you both read and write the one shared file.</div></div>
   </div>
 
@@ -321,7 +321,7 @@ Selfcare:500,Movie:500,"Home needs":500,Recharge:1000,Medical:1500,"Bike service
 "Gas Cylinder":300,"Repair Charges":200};
 const PALETTE=["#1C2B3A","#217A54","#D98E2B","#B5402C","#5B7C99","#8C6BAA","#3E8E8E","#A67C52","#6B7280"];
 const MB=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-const FILE_NAME="vignesh-family-ledger.json";
+const FILE_NAME="MV-Expense-ledger.json";
 const SCOPE="https://www.googleapis.com/auth/drive";
 
 /* ══════ STATE ══════ */
@@ -338,7 +338,7 @@ function toast(m,err){const t=$("toast");t.textContent=m;t.className="toast show
   setTimeout(()=>t.className="toast",2400)}
 
 /* ══════ LOCAL PERSISTENCE ══════ */
-const LS="vignesh-ledger-v1";
+const LS="MV-ledger-v1";
 function saveLocal(){try{localStorage.setItem(LS,JSON.stringify(data))}catch(e){}}
 function loadLocal(){try{const r=localStorage.getItem(LS);if(r)data={...data,...JSON.parse(r)}}catch(e){}}
 
@@ -372,10 +372,10 @@ function initTokenClient(cid){
     callback:async resp=>{
       if(resp.error){setSync("off","Offline");toast("Google sign-in failed",true);return}
       token=resp.access_token;
-      localStorage.setItem("vignesh-cid",cid);
+      localStorage.setItem("MV-cid",cid);
       setSync("busy","Syncing…");
       try{ await syncNow(); setSync("on","Drive synced");
-           $("driveStatus").textContent="Connected. Entries sync to vignesh-family-ledger.json in your Drive.";
+           $("driveStatus").textContent="Connected. Entries sync to MV-Expense-ledger.json in your Drive.";
            $("saveHint").textContent="Saved to your Google Drive — your wife sees it too.";
            toast("Google Drive connected");
       }catch(e){ setSync("off","Sync error"); toast("Drive error: "+e.message,true) }
@@ -655,7 +655,7 @@ $("connectBtn").onclick=()=>{
   if(tokenClient){setSync("busy","Connecting…");tokenClient.requestAccessToken({prompt:"consent"})}
 };
 $("disconnectBtn").onclick=()=>{
-  token=null;fileId=null;localStorage.removeItem("vignesh-cid");
+  token=null;fileId=null;localStorage.removeItem("MV-cid");
   setSync("off","Offline");
   $("driveStatus").textContent="Not connected. Data is saved on this device only.";
   $("saveHint").textContent="Saved on this device. Connect Google Drive to sync with your wife.";
@@ -663,7 +663,7 @@ $("disconnectBtn").onclick=()=>{
 };
 $("syncBtn").onclick=async()=>{
   if(!token){
-    const saved=localStorage.getItem("vignesh-cid");
+    const saved=localStorage.getItem("MV-cid");
     if(saved){tokenClient=initTokenClient(saved);if(tokenClient)tokenClient.requestAccessToken({prompt:""})}
     else{document.querySelector('nav button[data-pane="setup"]').click();toast("Add your Client ID to connect")}
     return;
@@ -696,7 +696,7 @@ function updateHistBanner(){
   $("dt").value=new Date().toISOString().slice(0,10);
   populateCatFilter();
   populateSelectors();renderStrip();renderDash();renderTxns();renderBudgetEdit();updateHistBanner();
-  const saved=localStorage.getItem("vignesh-cid");
+  const saved=localStorage.getItem("MV-cid");
   if(saved){
     $("clientId").value=saved;
     setSync("off","Tap to sync");
