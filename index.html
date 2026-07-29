@@ -63,7 +63,7 @@ label{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chip{padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:14px;cursor:pointer}
 .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-.chip.on.Vidhya{background:var(--marigold);border-color:var(--marigold)}
+.chip.on.wife{background:var(--marigold);border-color:var(--marigold)}
 
 .btn{width:100%;padding:13px;border:none;border-radius:12px;background:var(--green);
   color:#fff;font-size:15.5px;font-weight:600;cursor:pointer;margin-top:14px}
@@ -76,7 +76,7 @@ label{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase
 .txn:last-child{border-bottom:none}
 .txn .dot{width:33px;height:33px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   font-size:12.5px;font-weight:700;color:#fff;flex-shrink:0}
-.who-M{background:var(--ink)}.who-W{background:var(--marigold)}.who-B{background:var(--bank)}
+.who-M{background:var(--ink)}.who-W,.who-V{background:var(--marigold)}.who-B{background:var(--bank)}
 .txn .mid{flex:1;min-width:0}
 .txn .cat{font-size:14px;font-weight:600}
 .txn .meta{font-size:11.5px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -107,6 +107,33 @@ nav button.on{color:var(--ink);font-weight:600}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.err{background:var(--red)}
 
+.scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.mtx{border-collapse:collapse;font-size:12.5px;min-width:100%}
+.mtx th,.mtx td{padding:7px 9px;white-space:nowrap;border-bottom:1px solid var(--line)}
+.mtx th{background:var(--soft);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;
+color:var(--muted);font-weight:600;position:sticky;top:0}
+.mtx td.c{text-align:right;font-variant-numeric:tabular-nums}
+.mtx td.nm{position:sticky;left:0;background:var(--card);font-weight:600;z-index:1}
+.mtx th.nm{position:sticky;left:0;z-index:2}
+.mtx tr:last-child td{border-bottom:none}
+.mtx tfoot td{font-weight:700;background:var(--soft)}
+.trend{font-size:11px;padding:1px 6px;border-radius:5px}
+.up{background:#FDEEEB;color:#B5402C}.dn{background:#EAF6EF;color:#217A54}
+.lgd{display:flex;flex-direction:column;gap:5px;margin-top:12px}
+.lgi{display:flex;align-items:center;gap:8px;font-size:13px}
+.lgi .sw{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.lgi .nm2{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lgi .am{font-variant-numeric:tabular-nums;font-weight:600}
+.lgi .pc{color:var(--muted);font-size:11.5px;width:38px;text-align:right}
+.alert{display:flex;gap:10px;padding:11px 13px;border-radius:10px;margin-bottom:8px;font-size:13.5px;line-height:1.5}
+.alert .ai{font-size:16px;line-height:1.3;flex-shrink:0}
+.alert.red{background:#FDEEEB;border:1px solid #F0C0B5}
+.alert.amber{background:#FFF8E6;border:1px solid #F0DDA8}
+.alert.green{background:#EAF6EF;border:1px solid #B6DFC6}
+.alert b{display:block;margin-bottom:1px}
+.editbar{display:flex;gap:8px;margin-top:10px}
+.editbar .btn{margin-top:0}
+.txn .ed{background:none;border:none;color:#9AA5B1;font-size:15px;cursor:pointer;padding:4px 5px}
 .note{font-size:12px;color:var(--muted);line-height:1.55;margin-top:9px}
 .chartbox{position:relative;height:230px}.chartbox.tall{height:275px}
 .empty{text-align:center;color:var(--muted);font-size:14px;padding:24px 10px;line-height:1.6}
@@ -158,6 +185,7 @@ nav button.on{color:var(--ink);font-weight:600}
     Tap <strong>Setup</strong> at the bottom, then <strong>Import history, or restore a backup</strong>,
     and choose the file <code>ledger-history.json</code>. Your 3,364 past entries and all charts appear straight away.
   </div>
+  <div id="insights"></div>
   <div class="msel">
     <select id="dashMonth" aria-label="Select month"></select>
     <span class="t">Dashboard for this month</span>
@@ -171,7 +199,8 @@ nav button.on{color:var(--ink);font-weight:600}
   <h2>Spend vs income · last 12 months</h2>
   <div class="card"><div class="chartbox"><canvas id="chTrend"></canvas></div></div>
   <h2>Where the money went</h2>
-  <div class="card"><div class="chartbox tall"><canvas id="chDonut"></canvas></div></div>
+  <div class="card"><div class="chartbox"><canvas id="chDonut"></canvas></div>
+    <div id="donutLegend"></div></div>
   <h2>Budget check</h2>
   <div class="card" id="budgetCheck"></div>
 </section>
@@ -203,7 +232,7 @@ nav button.on{color:var(--ink);font-weight:600}
     <label for="note">Note (optional)</label>
     <input type="text" id="note" placeholder="e.g. Groceries at DMart" maxlength="80">
     <button class="btn" id="saveBtn">Save entry</button>
-    <div class="note" id="saveHint">Saved on this device. Connect Google Drive to sync with your Vidhya.</div>
+    <div class="note" id="saveHint">Saved on this device. Connect Google Drive to sync with your wife.</div>
   </div>
 </section>
 
@@ -215,8 +244,39 @@ nav button.on{color:var(--ink);font-weight:600}
     <select id="fWho"><option value="">Everyone</option><option>Mahendra</option><option>Vidhya</option><option value="Bank">Bank history</option></select>
     <select id="fCat"><option value="">All categories</option></select>
   </div>
+  <div class="card" id="editPanel" style="display:none"></div>
   <div class="card" id="txnList"></div>
   <div class="note">B = imported bank history (read-only) · M / W = entries added in the app.</div>
+</section>
+
+<!-- TRENDS -->
+<section class="pane" id="pane-trends">
+  <h2>Top categories · last 12 months</h2>
+  <div class="msel">
+    <select id="topN">
+      <option value="6">Top 6</option>
+      <option value="8">Top 8</option>
+      <option value="10" selected>Top 10</option>
+    </select>
+    <span class="t">Tap a name in the key to hide that line</span>
+  </div>
+  <div class="card"><div class="chartbox tall"><canvas id="chTop"></canvas></div></div>
+  <div class="card" style="padding:0"><div id="topTable" class="scrollx"></div></div>
+
+  <h2>Category by month</h2>
+  <div class="msel">
+    <select id="trendRange">
+      <option value="6">Last 6 months</option>
+      <option value="12" selected>Last 12 months</option>
+      <option value="24">Last 24 months</option>
+      <option value="0">All months</option>
+    </select>
+    <span class="t">Amounts in ₹</span>
+  </div>
+  <div class="card" style="padding:0"><div id="matrixWrap" class="scrollx"></div></div>
+  <h2>Compare a category</h2>
+  <div class="msel"><select id="trendCat"></select><span class="t">Across the same period</span></div>
+  <div class="card"><div class="chartbox"><canvas id="chCat"></canvas></div></div>
 </section>
 
 <!-- BUDGET -->
@@ -263,7 +323,7 @@ nav button.on{color:var(--ink);font-weight:600}
     <div class="step"><div class="n">4</div><div class="b">Open <code>https://YOURNAME.github.io</code> on any phone. Add it to your home screen and it behaves like an app.</div></div>
   </div>
 
-  <h2>Sharing with your Vidhya</h2>
+  <h2>Sharing with your wife</h2>
   <div class="card">
     <div class="step"><div class="n">1</div><div class="b">Connect Drive here first — that creates the ledger file in your Drive.</div></div>
     <div class="step"><div class="n">2</div><div class="b">Open Google Drive, find <code>vignesh-family-ledger.json</code>, and share it with your wife's Gmail with <strong>Editor</strong> access.</div></div>
@@ -286,6 +346,7 @@ nav button.on{color:var(--ink);font-weight:600}
   <button class="on" data-pane="dash"><span class="ico">◧</span>Dashboard</button>
   <button data-pane="add"><span class="ico">＋</span>Add</button>
   <button data-pane="txns"><span class="ico">☰</span>Entries</button>
+  <button data-pane="trends"><span class="ico">◫</span>Trends</button>
   <button data-pane="budget"><span class="ico">◔</span>Budget</button>
   <button data-pane="setup"><span class="ico">⚙</span>Setup</button>
 </nav>
@@ -325,6 +386,7 @@ Food:3500,Grocery:3500,Shopping:4000,Travel:3000,Fuel:2500,Snacks:2000,Cash:1000
 Selfcare:500,Movie:500,"Home needs":500,Recharge:1000,Medical:1500,"Bike service":500,
 "Gas Cylinder":300,"Repair Charges":200};
 const PALETTE=["#1C2B3A","#217A54","#D98E2B","#B5402C","#5B7C99","#8C6BAA","#3E8E8E","#A67C52","#6B7280"];
+const LINEPAL=["#1C2B3A","#B5402C","#217A54","#D98E2B","#5B7C99","#8C6BAA","#3E8E8E","#C97B84","#A67C52","#4E6E58"];
 const MB=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const FILE_NAME="vignesh-family-ledger.json";
 const SCOPE="https://www.googleapis.com/auth/drive";
@@ -491,14 +553,24 @@ function renderDash(){
 
   const ent=Object.entries(bd).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
   const t8=ent.slice(0,8),rest=ent.slice(8).reduce((s,[,v])=>s+v,0);
+  const dl=t8.map(e=>e[0]).concat(rest>0?["Others"]:[]);
+  const dv=t8.map(e=>e[1]).concat(rest>0?[rest]:[]);
   if(charts.donut)charts.donut.destroy();
-  if(t8.length)charts.donut=new Chart($("chDonut"),{type:"doughnut",
-    data:{labels:t8.map(e=>e[0]).concat(rest>0?["Others"]:[]),
-      datasets:[{data:t8.map(e=>e[1]).concat(rest>0?[rest]:[]),backgroundColor:PALETTE,borderWidth:2,borderColor:"#fff"}]},
+  if(dv.length)charts.donut=new Chart($("chDonut"),{type:"doughnut",
+    data:{labels:dl,datasets:[{data:dv,backgroundColor:PALETTE,borderWidth:2,borderColor:"#fff"}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:"58%",
-      plugins:{legend:{position:"right",labels:{boxWidth:11,font:{size:11}}},
+      plugins:{legend:{display:false},
         tooltip:{callbacks:{label:c=>" "+c.label+": "+fmt(c.parsed)+" ("+Math.round(c.parsed/sp*100)+"%)"}}}}});
+  const lg=$("donutLegend");
+  lg.innerHTML=dv.length?'<div class="lgd">'+dl.map((n,i)=>
+    `<div class="lgi"><span class="sw" style="background:${PALETTE[i%PALETTE.length]}"></span>
+     <span class="nm2">${n}</span><span class="am">${fmt(dv[i])}</span>
+     <span class="pc">${sp?Math.round(dv[i]/sp*100):0}%</span></div>`).join("")+
+    `<div class="lgi" style="border-top:1px solid var(--line);padding-top:7px;margin-top:3px">
+     <span class="sw" style="background:transparent"></span><span class="nm2"><strong>Total</strong></span>
+     <span class="am">${fmt(sp)}</span><span class="pc"></span></div>`+'</div>':"";
 
+  renderInsights();
   const bc=$("budgetCheck");bc.innerHTML="";
   const rows=Object.entries(data.budgets).filter(([,b])=>b>0)
     .map(([c,b])=>({c,b,a:spendFor(m,c)})).filter(r=>r.a>0)
@@ -522,7 +594,7 @@ function mergedRows(){
     credit:h[2]===0&&h[3]>0,who:"Bank",mode:"",note:h[4],id:"h"+i}));
   return live.concat(bank)
     .filter(t=>!fm||monthLabel(t.date)===fm)
-    .filter(t=>!fw||(fw==="Bank"?t.src==="bank":t.who===fw))
+    .filter(t=>!fw||(fw==="Bank"?t.src==="bank":(fw==="Vidhya"?t.who!=="Mahendra"&&t.src==="app":t.who===fw)))
     .filter(t=>!fc||t.cat===fc)
     .sort((a,b)=>b.date.localeCompare(a.date));
 }
@@ -536,12 +608,12 @@ function renderTxns(keep){
     const d=document.createElement("div");d.className="txn";
     const x=new Date(t.date+"T00:00:00");
     const ds=x.getDate()+" "+MB[x.getMonth()]+" '"+String(x.getFullYear()).slice(2);
-    const badge=t.src==="bank"?"B":(t.who==="Vidhya"?"W":"M");
+    const badge=t.src==="bank"?"B":(t.who==="Mahendra"?"M":"V");
     d.innerHTML=`<div class="dot who-${badge}">${badge}</div>
       <div class="mid"><div class="cat">${t.cat}</div>
       <div class="meta">${[ds,t.mode,t.note].filter(Boolean).join(" · ")}</div></div>
       <div class="amt ${t.credit?"pos":""} num">${t.credit?"+":""}${fmt(t.amt)}</div>
-      ${t.src==="app"?`<button class="del" data-id="${t.id}" aria-label="Delete">✕</button>`:`<span style="width:29px"></span>`}`;
+      ${t.src==="app"?`<button class="ed" data-eid="${t.id}" aria-label="Edit">✎</button><button class="del" data-id="${t.id}" aria-label="Delete">✕</button>`:`<span style="width:58px"></span>`}`;
     frag.appendChild(d);
   });
   list.appendChild(frag);
@@ -552,6 +624,7 @@ function renderTxns(keep){
     b.onclick=()=>{txnPage++;renderTxns(true)};
     list.appendChild(b);
   }
+  list.querySelectorAll(".ed").forEach(b=>b.onclick=()=>openEdit(+b.dataset.eid));
   list.querySelectorAll(".del").forEach(b=>b.onclick=async()=>{
     const id=+b.dataset.id;
     data.txns=data.txns.filter(t=>t.id!==id);
@@ -560,6 +633,42 @@ function renderTxns(keep){
     if(token)try{await syncNow()}catch(e){}
     toast("Entry deleted");
   });
+}
+function openEdit(id){
+  const t=data.txns.find(x=>x.id===id);if(!t)return;
+  const p=$("editPanel");
+  p.style.display="block";
+  p.innerHTML=`
+    <div style="font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:16px;margin-bottom:4px">Edit entry</div>
+    <label>Who</label>
+    <select id="eWho"><option${t.who==="Mahendra"?" selected":""}>Mahendra</option><option${t.who!=="Mahendra"?" selected":""}>Vidhya</option></select>
+    <label>Type</label>
+    <select id="eType"><option value="expense"${t.type!=="income"?" selected":""}>Expense</option><option value="income"${t.type==="income"?" selected":""}>Income</option></select>
+    <label>Amount</label><input type="number" id="eAmt" value="${t.amt}" inputmode="decimal" min="0" step="0.01">
+    <label>Category</label>
+    <select id="eCat">${CATS.map(c=>`<option${c===t.cat?" selected":""}>${c}</option>`).join("")}</select>
+    <label>Date</label><input type="date" id="eDate" value="${t.date}">
+    <label>Payment mode</label>
+    <select id="eMode">${["UPI","Cash","Card","Bank transfer","Auto-debit","Other"].map(x=>`<option${x===t.mode?" selected":""}>${x}</option>`).join("")}</select>
+    <label>Note</label><input type="text" id="eNote" maxlength="80" value="${(t.note||"").replace(/"/g,"&quot;")}">
+    <div class="editbar">
+      <button class="btn" id="eSave">Save changes</button>
+      <button class="btn ghost" id="eCancel">Cancel</button>
+    </div>`;
+  p.scrollIntoView({behavior:"smooth",block:"nearest"});
+  $("eCancel").onclick=()=>{p.style.display="none";p.innerHTML=""};
+  $("eSave").onclick=async()=>{
+    const a=parseFloat($("eAmt").value);
+    if(!a||a<=0){toast("Enter an amount",true);return}
+    if(!$("eDate").value){toast("Pick a date",true);return}
+    t.who=$("eWho").value; t.type=$("eType").value;
+    t.cat=t.type==="income"?"Income":$("eCat").value;
+    t.amt=a; t.date=$("eDate").value; t.mode=$("eMode").value;
+    t.note=$("eNote").value.trim(); t.ts=Date.now();
+    p.style.display="none";p.innerHTML="";
+    saveLocal();refreshAll();toast("Entry updated");
+    if(token)try{await syncNow()}catch(e){}
+  };
 }
 function renderBudgetEdit(){
   const be=$("budgetEdit");be.innerHTML="";
@@ -582,7 +691,8 @@ function updateEmptyState(){
   const el=$("emptyState");if(!el)return;
   el.style.display=(HTX.length||data.txns.length)?"none":"block";
 }
-function refreshAll(){populateSelectors();renderStrip();renderDash();renderTxns();updateEmptyState()}
+function refreshAll(){populateSelectors();renderStrip();renderDash();renderTxns();updateEmptyState();
+  if($("pane-trends").classList.contains("active")){renderTopTrend();renderMatrix();}}
 
 /* ══════ EXPORT / IMPORT ══════ */
 function download(name,content,type){
@@ -622,15 +732,19 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   $("pane-"+b.dataset.pane).classList.add("active");
   if(b.dataset.pane==="dash")renderDash();
   if(b.dataset.pane==="txns")renderTxns();
+  if(b.dataset.pane==="trends"){renderTopTrend();renderMatrix();}
   window.scrollTo(0,0);
 });
 $("whoChips").onclick=e=>{const c=e.target.closest(".chip");if(!c)return;who=c.dataset.who;
   $("whoChips").querySelectorAll(".chip").forEach(x=>{x.classList.toggle("on",x===c);
-    x.classList.toggle("Vidhya",x===c&&who==="Vidhya")})};
+    x.classList.toggle("wife",x===c&&who!=="Mahendra")})};
 $("typeChips").onclick=e=>{const c=e.target.closest(".chip");if(!c)return;etype=c.dataset.type;
   $("typeChips").querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===c));
   $("cat").disabled=etype==="income"};
 $("dashMonth").onchange=renderDash;
+$("trendRange").onchange=renderMatrix;
+$("topN").onchange=renderTopTrend;
+$("trendCat").onchange=()=>renderCatChart(trendMonths(),buildMatrix(trendMonths()));
 $("fMonth").onchange=()=>renderTxns();
 $("fWho").onchange=()=>renderTxns();
 $("fCat").onchange=()=>renderTxns();
@@ -683,6 +797,164 @@ $("syncBtn").onclick=async()=>{
   catch(e){setSync("off","Sync failed");toast("Sync failed: "+e.message,true)}
 };
 
+function buildMatrix(months){
+  const idx={};
+  const ensure=c=>{if(!idx[c])idx[c]=new Array(months.length).fill(0);return idx[c]};
+  months.forEach((m,i)=>{
+    const hi=HIST.months.indexOf(m);
+    if(hi<0)return;
+    for(const c in HIST.spend){const v=HIST.spend[c][hi];if(v)ensure(c)[i]+=v}
+  });
+  data.txns.forEach(t=>{
+    if(t.type==="income")return;
+    const i=months.indexOf(monthLabel(t.date));
+    if(i>=0)ensure(t.cat)[i]+=t.amt;
+  });
+  return idx;
+}
+function last12(){ const a=allMonths(); return a.slice(-12); }
+function renderTopTrend(){
+  const months=last12(); if(!months.length)return;
+  const idx=buildMatrix(months);
+  const n=parseInt($("topN").value)||10;
+  const ranked=Object.entries(idx).map(([c,a])=>({c,a,tot:a.reduce((s,v)=>s+v,0)}))
+    .filter(r=>r.tot>0).sort((x,y)=>y.tot-x.tot).slice(0,n);
+  if(!ranked.length){$("topTable").innerHTML='<div class="empty">No data yet.</div>';return}
+
+  if(charts.top)charts.top.destroy();
+  charts.top=new Chart($("chTop"),{type:"line",
+    data:{labels:months,datasets:ranked.map((r,i)=>({
+      label:r.c,data:r.a,borderColor:LINEPAL[i%LINEPAL.length],
+      backgroundColor:LINEPAL[i%LINEPAL.length],
+      borderWidth:2,tension:.3,pointRadius:1.5,pointHoverRadius:4,fill:false}))},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"nearest",intersect:false},
+      plugins:{legend:{position:"bottom",labels:{boxWidth:10,boxHeight:10,font:{size:11},padding:9,usePointStyle:true,pointStyle:"circle"}},
+        tooltip:{callbacks:{label:c=>" "+c.dataset.label+": "+fmt(c.parsed.y)}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45}},
+        y:{ticks:{font:{size:10},callback:v=>"₹"+Math.round(v/1000)+"K"},grid:{color:"#EFEDE6"}}}}});
+
+  let html='<table class="mtx"><thead><tr><th class="nm">#</th><th class="nm" style="left:40px">Category</th>'+
+    '<th style="text-align:right">12-mo total</th><th style="text-align:right">Monthly avg</th>'+
+    '<th style="text-align:right">Peak</th><th style="text-align:right">Latest</th><th style="text-align:right">Trend</th></tr></thead><tbody>';
+  ranked.forEach((r,i)=>{
+    const active=r.a.filter(v=>v>0).length||1;
+    const avg=r.tot/active, peak=Math.max(...r.a), last=r.a[r.a.length-1];
+    const prior=r.a.slice(0,-1).filter(v=>v>0);
+    const pavg=prior.length?prior.reduce((s,v)=>s+v,0)/prior.length:0;
+    let tr='<span class="trend">—</span>';
+    if(pavg>0&&last>0){const d=Math.round((last-pavg)/pavg*100);
+      if(d>=15)tr=`<span class="trend up">▲ ${d}%</span>`;
+      else if(d<=-15)tr=`<span class="trend dn">▼ ${Math.abs(d)}%</span>`;}
+    html+=`<tr><td class="nm" style="color:${LINEPAL[i%LINEPAL.length]}">●</td>`+
+      `<td class="nm" style="left:40px">${r.c}</td>`+
+      `<td class="c"><strong>${Math.round(r.tot).toLocaleString("en-IN")}</strong></td>`+
+      `<td class="c">${Math.round(avg).toLocaleString("en-IN")}</td>`+
+      `<td class="c">${Math.round(peak).toLocaleString("en-IN")}</td>`+
+      `<td class="c">${last?Math.round(last).toLocaleString("en-IN"):"·"}</td>`+
+      `<td class="c">${tr}</td></tr>`;
+  });
+  html+="</tbody></table>";
+  $("topTable").innerHTML=html;
+}
+function trendMonths(){
+  const all=allMonths(),n=parseInt($("trendRange").value)||0;
+  return n?all.slice(-n):all;
+}
+function renderMatrix(){
+  const months=trendMonths(),idx=buildMatrix(months);
+  const rows=Object.entries(idx).map(([c,a])=>({c,a,tot:a.reduce((s,v)=>s+v,0)}))
+    .filter(r=>r.tot>0).sort((x,y)=>y.tot-x.tot);
+  if(!rows.length){$("matrixWrap").innerHTML='<div class="empty">No data for this period.</div>';return}
+  let html='<table class="mtx"><thead><tr><th class="nm">Category</th>'+
+    months.map(m=>`<th style="text-align:right">${m}</th>`).join("")+
+    '<th style="text-align:right">Total</th><th style="text-align:right">Trend</th></tr></thead><tbody>';
+  rows.forEach(r=>{
+    const mx=Math.max(...r.a);
+    const last=r.a[r.a.length-1];
+    const prior=r.a.slice(0,-1).filter(v=>v>0);
+    const avg=prior.length?prior.reduce((s,v)=>s+v,0)/prior.length:0;
+    let tr='<span class="trend">—</span>';
+    if(avg>0&&last>0){
+      const d=Math.round((last-avg)/avg*100);
+      if(d>=15)tr=`<span class="trend up">▲ ${d}%</span>`;
+      else if(d<=-15)tr=`<span class="trend dn">▼ ${Math.abs(d)}%</span>`;
+    }
+    html+=`<tr><td class="nm">${r.c}</td>`+
+      r.a.map(v=>{
+        const o=mx?(v/mx*0.16).toFixed(3):0;
+        return `<td class="c" style="background:rgba(217,142,43,${v?o:0})">${v?Math.round(v).toLocaleString("en-IN"):"·"}</td>`;
+      }).join("")+
+      `<td class="c"><strong>${Math.round(r.tot).toLocaleString("en-IN")}</strong></td><td class="c">${tr}</td></tr>`;
+  });
+  const totals=months.map((_,i)=>rows.reduce((s,r)=>s+r.a[i],0));
+  html+='</tbody><tfoot><tr><td class="nm">Total</td>'+
+    totals.map(v=>`<td class="c">${Math.round(v).toLocaleString("en-IN")}</td>`).join("")+
+    `<td class="c">${Math.round(totals.reduce((s,v)=>s+v,0)).toLocaleString("en-IN")}</td><td></td></tr></tfoot></table>`;
+  $("matrixWrap").innerHTML=html;
+
+  const keep=$("trendCat").value;
+  const cats=rows.map(r=>r.c);
+  $("trendCat").innerHTML=cats.map(c=>`<option>${c}</option>`).join("");
+  $("trendCat").value=cats.includes(keep)?keep:cats[0];
+  renderCatChart(months,idx);
+}
+function renderCatChart(months,idx){
+  const c=$("trendCat").value;if(!c||!idx[c])return;
+  if(charts.cat)charts.cat.destroy();
+  charts.cat=new Chart($("chCat"),{type:"bar",
+    data:{labels:months,datasets:[{label:c,data:idx[c],backgroundColor:"#D98E2B",borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:x=>" "+fmt(x.parsed.y)}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45}},
+        y:{ticks:{font:{size:10},callback:v=>"₹"+Math.round(v/1000)+"K"},grid:{color:"#EFEDE6"}}}}});
+}
+function renderInsights(){
+  const box=$("insights");if(!box)return;
+  const m=$("dashMonth").value;if(!m){box.innerHTML="";return}
+  const months=allMonths(),i=months.indexOf(m);
+  const prior=months.slice(Math.max(0,i-3),i);
+  const idx=buildMatrix(months);
+  const out=[];
+  const sp=totalSpend(m),inc=totalIncome(m);
+
+  if(inc>0){
+    const rate=Math.round((inc-sp)/inc*100);
+    if(rate<0)out.push(["red","!","Spent more than you earned",
+      `${m} spend of ${fmt(sp)} exceeded income of ${fmt(inc)} by ${fmt(sp-inc)}.`]);
+    else if(rate<10)out.push(["amber","!","Very little left over",
+      `You kept only ${rate}% of ${m} income. Aim for 20% or more.`]);
+    else out.push(["green","✓","Healthy month",
+      `You kept ${rate}% of ${m} income — ${fmt(inc-sp)} not spent.`]);
+  }
+
+  Object.entries(data.budgets).filter(([,b])=>b>0).forEach(([c,b])=>{
+    const a=spendFor(m,c);
+    if(a>b*1.1)out.push(["red","▲",`${c} over budget`,
+      `${fmt(a)} against a ${fmt(b)} budget — ${fmt(a-b)} over.`]);
+  });
+
+  if(prior.length>=2){
+    Object.keys(idx).forEach(c=>{
+      const cur=idx[c][i]||0;
+      const pv=prior.map(pm=>idx[c][months.indexOf(pm)]||0).filter(v=>v>0);
+      if(!pv.length||cur<3000)return;
+      const avg=pv.reduce((s,v)=>s+v,0)/pv.length;
+      if(avg>0&&cur>avg*1.6)out.push(["amber","▲",`${c} spiked`,
+        `${fmt(cur)} this month vs a ${fmt(avg)} average over the previous ${pv.length} months.`]);
+    });
+  }
+
+  const invB=data.budgets["Investment"]||0, invA=spendFor(m,"Investment");
+  if(invB>0&&invA<invB)out.push(["amber","↓","Investment below target",
+    `${fmt(invA)} invested in ${m} against your ${fmt(invB)} floor. Shortfall ${fmt(invB-invA)}.`]);
+
+  const bd=breakdown(m),top=Object.entries(bd).sort((a,b)=>b[1]-a[1])[0];
+  if(top&&sp>0&&top[1]/sp>0.4)out.push(["amber","◉","One category dominates",
+    `${top[0]} is ${Math.round(top[1]/sp*100)}% of ${m} spending (${fmt(top[1])}).`]);
+
+  box.innerHTML=out.length?out.slice(0,6).map(([k,ic,t,d])=>
+    `<div class="alert ${k}"><span class="ai">${ic}</span><div><b>${t}</b>${d}</div></div>`).join(""):"";
+}
 function populateCatFilter(){
   const keep=$("fCat").value;
   const all=[...new Set(HTX.map(x=>x[1]).concat(CATS))].sort();
@@ -700,6 +972,7 @@ function updateHistBanner(){
 /* ══════ INIT ══════ */
 (function init(){
   loadLocal();
+  data.txns.forEach(t=>{if(t.who==="Wife")t.who="Vidhya"});
   applyHistory();
   $("cat").innerHTML=CATS.map(c=>`<option>${c}</option>`).join("");
   $("cat").value="Food";
