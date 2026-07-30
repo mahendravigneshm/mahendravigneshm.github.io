@@ -465,6 +465,7 @@ let data={txns:[],budgets:{...DEFAULT_BUDGETS},deleted:[],budgetsTs:0,hist:null,
 let who="Mahendra", etype="expense", charts={}, txnPage=1;
 const PAGE=60;
 let token=null, tokenClient=null, fileId=null, syncing=false;
+let fileInfo=null, fileCount=0, lastSync=0, lastFocusSync=0;
 
 const $=id=>document.getElementById(id);
 const fmt=n=>"₹"+Math.round(n).toLocaleString("en-IN");
@@ -496,6 +497,32 @@ function merge(a,b){
 }
 
 /* ══════ GOOGLE DRIVE ══════ */
+function ago(ts){
+  if(!ts)return "";
+  const s=Math.round((Date.now()-ts)/1000);
+  if(s<60)return "just now";
+  if(s<3600)return Math.floor(s/60)+"m ago";
+  if(s<86400)return Math.floor(s/3600)+"h ago";
+  return Math.floor(s/86400)+"d ago";
+}
+function renderDriveStatus(){
+  const el=$("driveStatus");if(!el)return;
+  if(!token){el.textContent=localStorage.getItem("vignesh-cid")
+    ?"Client ID saved. Tap the sync button in the header to reconnect."
+    :"Not connected. Data is saved on this device only.";return}
+  let s="Connected.";
+  if(fileInfo){
+    const own=fileInfo.ownedByMe?"this account"
+      :((fileInfo.owners&&fileInfo.owners[0]&&fileInfo.owners[0].emailAddress)||"another account");
+    s+=` Using the ledger owned by ${own}.`;
+  }
+  if(lastSync)s+=` Last synced ${ago(lastSync)}.`;
+  if(fileCount>1)s+=` \u26A0 ${fileCount} ledger files are visible to this account — that usually means a duplicate was created. Keep the shared one and rename or delete the other.`;
+  el.textContent=s;
+}
+function refreshSyncLabel(){
+  if(token&&lastSync)$("syncTxt").textContent="Synced "+ago(lastSync);
+}
 function setSync(state,label){
   const b=$("syncBtn");
   b.className="syncbtn"+(state==="on"?" on":state==="busy"?" busy":"");
@@ -510,9 +537,9 @@ function initTokenClient(cid){
       token=resp.access_token;
       localStorage.setItem("vignesh-cid",cid);
       setSync("busy","Syncing…");
-      try{ await syncNow(); setSync("on","Drive synced");
-           $("driveStatus").textContent="Connected. Entries sync to vignesh-family-ledger.json in your Drive.";
-           $("saveHint").textContent="Saved to your Google Drive — your wife sees it too.";
+      try{ await syncNow(); setSync("on","Synced "+ago(lastSync));
+           renderDriveStatus();
+           $("saveHint").textContent="Saved to your Google Drive \u2014 Vidhya sees it too.";
            toast("Google Drive connected");
       }catch(e){ setSync("off","Sync error"); toast("Drive error: "+e.message,true) }
     }
@@ -526,9 +553,15 @@ async function gapi(url,opts={}){
 }
 async function findFile(){
   const q=encodeURIComponent(`name='${FILE_NAME}' and trashed=false`);
-  const r=await gapi(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&spaces=drive`);
+  const r=await gapi(`https://www.googleapis.com/drive/v3/files?q=${q}`+
+    `&fields=files(id,name,createdTime,modifiedTime,ownedByMe,owners(emailAddress))&spaces=drive`);
   const j=await r.json();
-  return j.files&&j.files.length?j.files[0].id:null;
+  const f=(j.files||[]).slice().sort((a,b)=>(a.createdTime||"").localeCompare(b.createdTime||""));
+  fileCount=f.length;
+  if(!f.length)return null;
+  const pick=f.find(x=>!x.ownedByMe)||f[0];
+  fileInfo=pick;
+  return pick.id;
 }
 async function createFile(payload){
   const meta={name:FILE_NAME,mimeType:"application/json"};
@@ -556,7 +589,8 @@ async function syncNow(){
     const remote=await readFile(fileId);
     if(remote&&remote.txns) data=merge(data,remote);
     await writeFile(fileId,data);
-    applyHistory(); saveLocal(); refreshAll();
+    lastSync=Date.now();
+    applyHistory(); saveLocal(); refreshAll(); renderDriveStatus();
   } finally { syncing=false }
 }
 
@@ -838,7 +872,7 @@ $("saveBtn").onclick=async()=>{
   refreshAll();
   toast((etype==="income"?"Income":"Expense")+" saved · "+fmt(amt));
   if(token){setSync("busy","Syncing…");
-    try{await syncNow();setSync("on","Drive synced")}
+    try{await syncNow();setSync("on","Synced "+ago(lastSync))}
     catch(e){setSync("off","Sync failed");toast("Saved locally — Drive sync failed",true)}}
   $("saveBtn").disabled=false;
 };
@@ -857,8 +891,8 @@ $("connectBtn").onclick=()=>{
 $("disconnectBtn").onclick=()=>{
   token=null;fileId=null;localStorage.removeItem("vignesh-cid");
   setSync("off","Offline");
-  $("driveStatus").textContent="Not connected. Data is saved on this device only.";
-  $("saveHint").textContent="Saved on this device. Connect Google Drive to sync with your wife.";
+  fileInfo=null;fileCount=0;lastSync=0;renderDriveStatus();
+  $("saveHint").textContent="Saved on this device. Connect Google Drive to sync with Vidhya.";
   toast("Disconnected from Drive");
 };
 $("syncBtn").onclick=async()=>{
@@ -869,7 +903,7 @@ $("syncBtn").onclick=async()=>{
     return;
   }
   setSync("busy","Syncing…");
-  try{await syncNow();setSync("on","Drive synced");toast("Synced with Drive")}
+  try{await syncNow();setSync("on","Synced "+ago(lastSync));toast("Synced with Drive")}
   catch(e){setSync("off","Sync failed");toast("Sync failed: "+e.message,true)}
 };
 
@@ -1151,12 +1185,28 @@ function updateHistBanner(){
   $("dt").value=new Date().toISOString().slice(0,10);
   populateCatFilter();
   populateSelectors();renderStrip();renderDash();renderTxns();renderBudgetEdit();updateHistBanner();updateEmptyState();
+  renderDriveStatus();
   const saved=localStorage.getItem("vignesh-cid");
   if(saved){
     $("clientId").value=saved;
-    setSync("off","Tap to sync");
-    $("driveStatus").textContent="Client ID saved. Tap the sync button in the header to reconnect.";
+    setSync("busy","Connecting…");
+    const start=()=>{
+      tokenClient=initTokenClient(saved);
+      if(tokenClient)tokenClient.requestAccessToken({prompt:""});
+      else setSync("off","Tap to sync");
+    };
+    if(window.google&&google.accounts)start();
+    else setTimeout(start,1200);
   }
+  document.addEventListener("visibilitychange",async()=>{
+    if(document.visibilityState!=="visible"||!token)return;
+    if(Date.now()-lastFocusSync<15000)return;
+    lastFocusSync=Date.now();
+    setSync("busy","Syncing…");
+    try{await syncNow();setSync("on","Synced "+ago(lastSync))}
+    catch(e){setSync("off","Tap to sync")}
+  });
+  setInterval(refreshSyncLabel,30000);
 })();
 </script>
 </body>
