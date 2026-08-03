@@ -120,6 +120,13 @@ padding:16px 16px 14px;margin-bottom:12px}
 .verdict .va{font-family:"Fraunces",Georgia,serif;font-size:30px;font-weight:600;margin:5px 0 8px;line-height:1.1}
 .verdict .vn{font-size:13.5px;line-height:1.6}
 .verdict .vn b{font-variant-numeric:tabular-nums}
+.verdict .vrow{display:flex;align-items:baseline;gap:9px;padding:7px 0;border-top:1px solid var(--line)}
+.verdict .vrow:first-of-type{border-top:none;padding-top:2px}
+.verdict .vdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.verdict .vlbl{font-size:12.5px;flex:1}
+.verdict .vpct{font-family:"Fraunces",Georgia,serif;font-size:19px;font-weight:600}
+.legend2{display:flex;flex-wrap:wrap;gap:14px;font-size:11.5px;color:var(--muted);margin:0 2px 9px}
+.legend2 i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
 .tnote{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:9px}
 #divWrap{position:relative;height:340px}
 .sm{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
@@ -177,6 +184,13 @@ border-top:1px solid var(--line);margin-top:4px}
 .alert b{display:block;margin-bottom:1px}
 .editbar{display:flex;gap:8px;margin-top:10px}
 .editbar .btn{margin-top:0}
+#filterSum{display:none;background:var(--ink);color:#F3F1EA;border-radius:12px;
+padding:12px 15px;margin-bottom:12px}
+#filterSum.on{display:block}
+#filterSum .fr{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+#filterSum .fl{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#B9C2CC}
+#filterSum .fv{font-family:"Fraunces",Georgia,serif;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+#filterSum .fsub{font-size:11.5px;color:#B9C2CC;margin-top:4px;display:flex;gap:14px;flex-wrap:wrap}
 .txn .ed{background:none;border:none;color:#9AA5B1;font-size:15px;cursor:pointer;padding:4px 5px}
 #insightBox{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:6px 0 14px}
 #insightBox summary{padding:14px;cursor:pointer;font-family:"Fraunces",Georgia,serif;font-weight:600;
@@ -335,6 +349,7 @@ padding:1px 7px;border-radius:4px;margin-bottom:5px;font-weight:600}
     <select id="fCat"><option value="">All categories</option></select>
   </div>
   <div class="card" id="editPanel" style="display:none"></div>
+  <div id="filterSum"></div>
   <div class="card" id="txnList"></div>
   <div class="note">B = imported bank history (read-only) · M / W = entries added in the app.</div>
 </section>
@@ -345,6 +360,10 @@ padding:1px 7px;border-radius:4px;margin-bottom:5px;font-weight:600}
   <label class="excl"><input type="checkbox" id="exclOneoff" checked>
     <span>Exclude one-off purchases &amp; transfers</span></label>
   <div class="verdict" id="verdict"></div>
+  <div class="legend2">
+    <span><i style="background:#1C2B3A"></i>Essential — home, education, insurance, investment</span>
+    <span><i style="background:#D98E2B"></i>Everything else</span>
+  </div>
   <div class="msel">
     <select id="smooth"><option value="3">3-month average</option>
       <option value="6" selected>6-month average</option>
@@ -481,13 +500,16 @@ function applyHistory(){
 
 const CATS=["Home","Rent","Insurance","Investment","Marriage","Education","Mobile","Bike","Food",
 "Grocery","Shopping","Travel","Fuel","Snacks","Cash","Gift","Selfcare","Movie","Home needs",
-"Lending","Recharge","Medical","Bike service","Gas Cylinder","Repair Charges","Water","Reimburse","Other"];
+"Lending","Recharge","Medical","Gas Cylinder","Reimburse","Income","Others"];
+const MERGE_INTO_OTHERS=["Water","Repair Charges","Fee","Bike service","Other"];
+function normCat(c){return MERGE_INTO_OTHERS.includes(c)?"Others":c;}
 const DEFAULT_BUDGETS={Home:25000,Rent:8000,Insurance:2500,Investment:20000,Marriage:10000,
 Food:3500,Grocery:3500,Shopping:4000,Travel:3000,Fuel:2500,Snacks:2000,Cash:1000,Gift:1000,
 Selfcare:500,Movie:500,"Home needs":500,Recharge:1000,Medical:1500,"Bike service":500,
 "Gas Cylinder":300,"Repair Charges":200};
 const PALETTE=["#1C2B3A","#217A54","#D98E2B","#B5402C","#5B7C99","#8C6BAA","#3E8E8E","#A67C52","#6B7280"];
-const ONEOFF=["Marriage","Bike","Mobile","Education"];
+const ESSENTIAL=["Home","Education","Insurance","Investment"];
+const ONEOFF=["Marriage","Bike","Mobile"];
 const NONSPEND=["Lending","Lending repayment","Reimburse"];
 const LINEPAL=["#1C2B3A","#B5402C","#217A54","#D98E2B","#5B7C99","#8C6BAA","#3E8E8E","#C97B84","#A67C52","#4E6E58"];
 const MB=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -649,14 +671,14 @@ function totalIncome(m){
 }
 function spendFor(m,c){
   let v=0;const i=HIST.months.indexOf(m);
-  if(i>=0&&HIST.spend[c])v+=HIST.spend[c][i];
-  data.txns.forEach(t=>{if(t.type!=="income"&&t.cat===c&&monthLabel(t.date)===m)v+=t.amt});
+  if(i>=0)for(const hc in HIST.spend){if(normCat(hc)===c)v+=HIST.spend[hc][i]}
+  data.txns.forEach(t=>{if(t.type!=="income"&&normCat(t.cat)===c&&monthLabel(t.date)===m)v+=t.amt});
   return v;
 }
 function breakdown(m){
   const o={};const i=HIST.months.indexOf(m);
-  if(i>=0)for(const c in HIST.spend){if(HIST.spend[c][i]>0)o[c]=(o[c]||0)+HIST.spend[c][i]}
-  data.txns.forEach(t=>{if(t.type!=="income"&&monthLabel(t.date)===m)o[t.cat]=(o[t.cat]||0)+t.amt});
+  if(i>=0)for(const c in HIST.spend){if(HIST.spend[c][i]>0)o[normCat(c)]=(o[normCat(c)]||0)+HIST.spend[c][i]}
+  data.txns.forEach(t=>{if(t.type!=="income"&&monthLabel(t.date)===m)o[normCat(t.cat)]=(o[normCat(t.cat)]||0)+t.amt});
   return o;
 }
 const curMonth=()=>{const n=new Date();return MB[n.getMonth()]+"-"+String(n.getFullYear()).slice(2)};
@@ -746,6 +768,7 @@ function renderTxns(keep){
   if(keep!==true)txnPage=1;
   const list=$("txnList");list.innerHTML="";
   const rows=mergedRows();
+  renderFilterSum(rows);
   if(!rows.length){list.innerHTML='<div class="empty">No entries match these filters.</div>';return}
   const shown=rows.slice(0,txnPage*PAGE),frag=document.createDocumentFragment();
   shown.forEach(t=>{
@@ -818,6 +841,25 @@ function openEdit(id){
     saveLocal();refreshAll();toast("Entry updated");
     if(token)try{await syncNow()}catch(e){}
   };
+}
+function renderFilterSum(rows){
+  const box=$("filterSum");
+  const active=$("fMonth").value||$("fWho").value||$("fCat").value;
+  if(!active||!rows.length){box.className="";box.innerHTML="";return}
+  let out=0,cr=0,cO=0,cM=0,cV=0,cB=0;
+  rows.forEach(r=>{
+    if(r.credit)cr+=r.amt; else out+=r.amt;
+    if(r.src==="bank")cB++; else if(r.who==="Mahendra")cM++; else cV++;
+    cO++;
+  });
+  const parts=[`${cO} ${cO===1?"entry":"entries"}`];
+  if(cB)parts.push(`${cB} bank`); if(cM)parts.push(`${cM} by M`); if(cV)parts.push(`${cV} by V`);
+  const net=out-cr;
+  box.className="on";
+  box.innerHTML=`<div class="fr"><span class="fl">Filtered spend</span>
+      <span class="fv">${fmt(net)}</span></div>
+    <div class="fsub"><span>${parts.join(" · ")}</span>${
+      cr>0?`<span>expenses ${fmt(out)} · refunds −${fmt(cr)}</span>`:""}</div>`;
 }
 function renderBudgetEdit(){
   const be=$("budgetEdit");be.innerHTML="";
@@ -892,10 +934,20 @@ $("whoChips").onclick=e=>{const c=e.target.closest(".chip");if(!c)return;who=c.d
 const TYPEHINT={expense:"Money going out.",
   credit:"Money coming back into a category — an investment redemption, an official reimbursement, a returned purchase. It reduces that category's spend.",
   income:"Salary or other income. Not tied to a spending category."};
+let catBeforeIncome=null;
 $("typeChips").onclick=e=>{const c=e.target.closest(".chip");if(!c)return;etype=c.dataset.type;
   $("typeChips").querySelectorAll(".chip").forEach(x=>{
     x.classList.toggle("on",x===c);x.classList.toggle("credit",x===c&&etype==="credit")});
-  $("cat").disabled=etype==="income";
+  const cat=$("cat");
+  if(etype==="income"){
+    if(cat.value!=="Income")catBeforeIncome=cat.value;
+    if(![...cat.options].some(o=>o.value==="Income"))
+      cat.insertAdjacentHTML("afterbegin","<option>Income</option>");
+    cat.value="Income"; cat.disabled=true;
+  }else{
+    cat.disabled=false;
+    if(cat.value==="Income")cat.value=catBeforeIncome||"Food";
+  }
   $("typeHint").textContent=TYPEHINT[etype]||"";};
 $("dashMonth").onchange=renderDash;
 $("trendRange").onchange=renderMatrix;
@@ -963,12 +1015,12 @@ function buildMatrix(months){
   months.forEach((m,i)=>{
     const hi=HIST.months.indexOf(m);
     if(hi<0)return;
-    for(const c in HIST.spend){const v=HIST.spend[c][hi];if(v)ensure(c)[i]+=v}
+    for(const c in HIST.spend){const v=HIST.spend[c][hi];if(v)ensure(normCat(c))[i]+=v}
   });
   data.txns.forEach(t=>{
     if(t.type==="income")return;
     const i=months.indexOf(monthLabel(t.date));
-    if(i>=0)ensure(t.cat)[i]+=t.amt;
+    if(i>=0)ensure(normCat(t.cat))[i]+=t.amt;
   });
   return idx;
 }
@@ -978,46 +1030,58 @@ function renderTopTrend(){
   const months=last12(); if(!months.length)return;
   const idx=buildMatrix(months),skip=skipCats();
 
-  /* ── Headline: are you spending more than before? ── */
+  /* ── Headline: essential vs everything else ── */
   const allM=allMonths(), aidx=buildMatrix(allM);
-  const rawTot=allM.map((m,i)=>Object.keys(aidx)
-    .filter(c=>!skip.includes(c)).reduce((s,c)=>s+(aidx[c][i]||0),0));
-  const series=rawTot.map(v=>Math.max(0,v));
+  const sumOf=(list,i)=>list.reduce((s,c)=>s+(aidx[c]?aidx[c][i]||0:0),0);
+  const otherCats=Object.keys(aidx).filter(c=>
+    !ESSENTIAL.includes(c)&&!skip.includes(c)&&!ONEOFF.includes(c)&&!NONSPEND.includes(c));
+  const rawE=allM.map((m,i)=>sumOf(ESSENTIAL,i));
+  const rawO=allM.map((m,i)=>sumOf(otherCats,i));
+  const essS=rawE.map(v=>Math.max(0,v)), othS=rawO.map(v=>Math.max(0,v));
   const win=parseInt($("smooth").value)||6;
-  const roll=series.map((_,i)=>{
-    const w=series.slice(Math.max(0,i-(win-1)),i+1);
-    return w.reduce((s,v)=>s+v,0)/w.length;
-  });
+  const smooth=a=>a.map((_,i)=>{const w=a.slice(Math.max(0,i-(win-1)),i+1);
+    return w.reduce((s,v)=>s+v,0)/w.length});
+  const rE=smooth(essS), rO=smooth(othS);
+
   if(charts.overall)charts.overall.destroy();
   charts.overall=new Chart($("chOverall"),{
     data:{labels:allM,datasets:[
-      {type:"bar",label:"Monthly spend",data:series,backgroundColor:"#D6DBE0",borderRadius:3,order:2},
-      {type:"line",label:win+"-month average",data:roll,borderColor:"#1C2B3A",borderWidth:3,
-       tension:.35,pointRadius:0,pointHoverRadius:4,order:1}]},
+      {type:"bar",label:"Essential spend",data:essS,backgroundColor:"#C6CDD4",
+       stack:"s",order:3,categoryPercentage:.84,barPercentage:.92},
+      {type:"bar",label:"Discretionary spend",data:othS,backgroundColor:"#F0D6A8",
+       stack:"s",order:3,categoryPercentage:.84,barPercentage:.92},
+      {type:"line",label:"Essential avg",data:rE,borderColor:"#1C2B3A",yAxisID:"yLine",
+       borderWidth:3,tension:.35,pointRadius:0,pointHoverRadius:4,order:1},
+      {type:"line",label:"Discretionary avg",data:rO,borderColor:"#D98E2B",yAxisID:"yLine",
+       borderWidth:3,tension:.35,pointRadius:0,pointHoverRadius:4,order:1}]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
-      plugins:{legend:{labels:{boxWidth:11,font:{size:11},usePointStyle:true,pointStyle:"circle"}},
+      plugins:{legend:{labels:{boxWidth:11,font:{size:10.5},usePointStyle:true,pointStyle:"circle"}},
         tooltip:{callbacks:{label:c=>" "+c.dataset.label+": "+fmt(c.parsed.y)}}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:60,autoSkip:true,maxTicksLimit:12}},
-        y:{ticks:{font:{size:10},callback:v=>"₹"+Math.round(v/1000)+"K"},grid:{color:"#EFEDE6"}}}}});
+      scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:9},maxRotation:60,autoSkip:true,maxTicksLimit:12}},
+        y:{stacked:true,position:"left",beginAtZero:true,ticks:{font:{size:10},callback:v=>"₹"+Math.round(v/1000)+"K"},grid:{color:"#EFEDE6"}},
+        yLine:{display:false,beginAtZero:true,grace:"6%"}}}});
 
-  const N=series.length;
-  const recW=series.slice(Math.max(0,N-12)), priW=series.slice(Math.max(0,N-24),Math.max(0,N-12));
-  const aNow=recW.length?recW.reduce((s,v)=>s+v,0)/recW.length:0;
-  const aPrev=priW.length?priW.reduce((s,v)=>s+v,0)/priW.length:0;
-  const vd=$("verdict");
-  if(aPrev>0){
-    const d=Math.round((aNow-aPrev)/aPrev*100), up=d>0, flat=Math.abs(d)<5;
-    vd.innerHTML=`<div class="vq">Are you spending more than before?</div>
-      <div class="va" style="color:${flat?"#1C2B3A":(up?"#B5402C":"#217A54")}">${
-        flat?"About the same":(up?"Yes — up "+d+"%":"No — down "+Math.abs(d)+"%")}</div>
-      <div class="vn">You're averaging <b>${fmt(aNow)}</b> a month over the last ${recW.length} months,
-        against <b>${fmt(aPrev)}</b> in the ${priW.length} months before that.</div>`;
-  } else vd.innerHTML='<div class="vq">Are you spending more than before?</div>'+
-    '<div class="vn" style="margin-top:6px">Not enough history yet to compare.</div>';
+    const N=allM.length;
+  const avgOf=(a,s,e)=>{const w=a.slice(Math.max(0,s),Math.max(0,e));
+    return w.length?w.reduce((x,v)=>x+v,0)/w.length:0};
+  const eNow=avgOf(essS,N-12,N), ePrev=avgOf(essS,N-24,N-12);
+  const oNow=avgOf(othS,N-12,N), oPrev=avgOf(othS,N-24,N-12);
+  const pctOf=(n,p)=>p>0?Math.round((n-p)/p*100):null;
+  const pE=pctOf(eNow,ePrev), pO=pctOf(oNow,oPrev);
+  const word=p=>p===null?"—":(Math.abs(p)<5?"flat":(p>0?"up "+p+"%":"down "+Math.abs(p)+"%"));
+  const col=p=>p===null?"#1C2B3A":(Math.abs(p)<5?"#1C2B3A":(p>0?"#B5402C":"#217A54"));
+  $("verdict").innerHTML=`
+    <div class="vq">Compared with the 12 months before</div>
+    <div class="vrow"><span class="vdot" style="background:#1C2B3A"></span>
+      <span class="vlbl">Essential<br><span style="color:var(--muted);font-size:11.5px">${fmt(eNow)}/mo now · was ${fmt(ePrev)}</span></span>
+      <span class="vpct" style="color:${col(pE)}">${word(pE)}</span></div>
+    <div class="vrow"><span class="vdot" style="background:#D98E2B"></span>
+      <span class="vlbl">Everything else<br><span style="color:var(--muted);font-size:11.5px">${fmt(oNow)}/mo now · was ${fmt(oPrev)}</span></span>
+      <span class="vpct" style="color:${col(pO)}">${word(pO)}</span></div>`;
 
-  const neg=allM.filter((m,i)=>rawTot[i]<0);
-  $("overallNote").innerHTML="Bars are each month's spend; the line smooths them so the direction stands out."+
-    (neg.length?` <strong>${neg.join(", ")}</strong> computed below zero because of a large correction entry, so ${neg.length>1?"they are":"it is"} shown as zero.`:"");
+  const neg=allM.filter((m,i)=>rawE[i]<0||rawO[i]<0);
+  $("overallNote").innerHTML="Each line is a "+win+"-month average, so month-to-month noise doesn't hide the direction."+
+    (neg.length?` <strong>${neg.join(", ")}</strong> computed below zero from a large correction entry and ${neg.length>1?"are":"is"} shown as zero.`:"");
 
   /* ── What changed: recent 3-month avg vs the 9 before ── */
   const n=parseInt($("topN").value)||10;
@@ -1122,15 +1186,16 @@ function renderCatChart(months,idx){
 }
 let donutOthers=[];
 function entriesFor(month,cat){
-  const cats=cat==="Others"?donutOthers:[cat];
+  const grp=cat==="Others"&&donutOthers.length?donutOthers:null;
+  const match=c=>grp?grp.includes(c):normCat(c)===cat;
   const out=[];
   data.txns.forEach(t=>{
-    if(t.type!=="income"&&cats.includes(t.cat)&&monthLabel(t.date)===month)
-      out.push({date:t.date,amt:t.amt,note:t.note||t.mode||"",who:t.who,src:"app",cat:t.cat});
+    if(t.type!=="income"&&match(t.cat)&&monthLabel(t.date)===month)
+      out.push({date:t.date,amt:t.amt,note:t.note||t.mode||"",who:t.who,src:"app",cat:normCat(t.cat)});
   });
   HTX.forEach(x=>{
-    if(cats.includes(x[1])&&monthLabel(x[0])===month&&x[2]>0)
-      out.push({date:x[0],amt:x[2],note:x[4]||"",who:"Bank",src:"bank",cat:x[1]});
+    if(match(x[1])&&monthLabel(x[0])===month&&x[2]>0)
+      out.push({date:x[0],amt:x[2],note:x[4]||"",who:"Bank",src:"bank",cat:normCat(x[1])});
   });
   return out.sort((a,b)=>b.amt-a.amt);
 }
@@ -1198,7 +1263,7 @@ function renderInsights(){
     if(avg<500)return;
     const d=Math.round((cur-avg)/avg*100);
     if(d>=40&&cur>=2000)rising.push({c,cur,avg,d});
-    else if(d<=-40&&avg>=2000)falling.push({c,cur,avg,d});
+    else if(d<=-40&&avg>=2000&&c!=="Investment")falling.push({c,cur,avg,d});
   });
   rising.sort((a,b)=>(b.cur-b.avg)-(a.cur-a.avg));
   falling.sort((a,b)=>(a.cur-a.avg)-(b.cur-b.avg));
@@ -1219,13 +1284,18 @@ function renderInsights(){
 
   const invB=data.budgets["Investment"]||0;
   const inv6=months.slice(Math.max(0,i-5),i+1).map(mm=>idx["Investment"]?(idx["Investment"][months.indexOf(mm)]||0):0);
-  if(invB>0&&inv6.length){
-    const hit=inv6.filter(v=>v>=invB).length;
+  if(inv6.length){
     const invA=inv6[inv6.length-1];
-    if(invA<invB)add("amber","Investment below your floor",
-      `${fmt(invA)} in ${m} against a ${fmt(invB)} target. You met the floor in ${hit} of the last ${inv6.length} months.`);
-    else add("green","Investment on track",
-      `${fmt(invA)} invested in ${m}. Floor met in ${hit} of the last ${inv6.length} months.`);
+    const invPrior=inv6.slice(0,-1).filter(v=>v!==0);
+    const invAvg=invPrior.length?invPrior.reduce((s,v)=>s+v,0)/invPrior.length:0;
+    if(invA<0)add("red","Investments were redeemed, not added",
+      `${m} shows a net withdrawal of ${fmt(Math.abs(invA))} from investments. Drawing down savings is a setback to your long-term plan — treat it as a red flag, not a saving.`);
+    else if(invB>0&&invA<invB)add("red","Investment fell short of your floor",
+      `Only ${fmt(invA)} invested in ${m} against your ${fmt(invB)} target — a ${fmt(invB-invA)} shortfall. Falling behind on investing sets back your goals.`);
+    else if(invAvg>0&&invA<invAvg*0.6)add("amber","Investing has slowed",
+      `${fmt(invA)} in ${m}, well below your recent ${fmt(invAvg)} pace. Keep the momentum up.`);
+    else if(invA>0)add("green","Investing on track",
+      `${fmt(invA)} invested in ${m}${invB>0?", meeting your "+fmt(invB)+" floor":""}.`);
   }
 
   const bd=breakdown(m);
@@ -1278,7 +1348,7 @@ function updateHistBanner(){
   loadLocal();
   data.txns.forEach(t=>{if(t.who==="Wife")t.who="Vidhya"});
   applyHistory();
-  $("cat").innerHTML=CATS.map(c=>`<option>${c}</option>`).join("");
+  $("cat").innerHTML=CATS.filter(c=>c!=="Income").map(c=>`<option>${c}</option>`).join("");
   $("cat").value="Food";
   $("dt").value=new Date().toISOString().slice(0,10);
   populateCatFilter();
