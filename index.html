@@ -1219,7 +1219,8 @@ function toggleDonutCat(btn,panel,month){
       const d=new Date(r.date+"T00:00:00");
       const badge=r.src==="bank"?"B":(r.who==="Mahendra"?"M":"V");
       const bg=r.src==="bank"?"var(--bank)":(r.who==="Mahendra"?"var(--ink)":"var(--marigold)");
-      const label=cat==="Others"?r.cat+(r.note?" · "+r.note:""):(r.note||"—");
+      const grouped=(cat==="Other categories"||cat==="Others");
+      const label=grouped?(r.cat+(r.note?" · "+r.note:"")):(r.note||"—");
       return `<div class="lgrow"><span class="w" style="background:${bg}">${badge}</span>
         <span class="d">${d.getDate()} ${MB[d.getMonth()]}</span>
         <span class="n">${label}</span><span class="a">${fmt(r.amt)}</span></div>`;
