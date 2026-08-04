@@ -505,9 +505,9 @@ function applyHistory(){
 }
 
 const CATS=["Home","Rent","Insurance","Investment","Marriage","Education","Mobile","Bike","Food",
-"Grocery","Shopping","Travel","Fuel","Snacks","Cash","Gift","Selfcare","Movie","Home needs",
+"Grocery","Shopping","Travel","Fuel","Snacks","Cash","Gift","Selfcare","Movie",
 "Lending","Recharge","Medical","Gas Cylinder","Reimburse","Income","Others"];
-const MERGE_INTO_OTHERS=["Water","Repair Charges","Fee","Bike service","Other"];
+const MERGE_INTO_OTHERS=["Water","Repair Charges","Fee","Bike service","Home needs","Other"];
 function normCat(c){return MERGE_INTO_OTHERS.includes(c)?"Others":c;}
 const DEFAULT_BUDGETS={Home:25000,Rent:8000,Insurance:2500,Investment:20000,Marriage:10000,
 Food:3500,Grocery:3500,Shopping:4000,Travel:3000,Fuel:2500,Snacks:2000,Cash:1000,Gift:1000,
@@ -718,7 +718,7 @@ function renderDash(){
 
   const ent=Object.entries(bd).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
   const t8=ent.slice(0,8),rest=ent.slice(8).reduce((s,[,v])=>s+v,0);
-  const dl=t8.map(e=>e[0]).concat(rest>0?["Others"]:[]);
+  const dl=t8.map(e=>e[0]).concat(rest>0?["Other categories"]:[]);
   const dv=t8.map(e=>e[1]).concat(rest>0?[rest]:[]);
   if(charts.donut)charts.donut.destroy();
   if(dv.length)charts.donut=new Chart($("chDonut"),{type:"doughnut",
@@ -1192,7 +1192,7 @@ function renderCatChart(months,idx){
 }
 let donutOthers=[];
 function entriesFor(month,cat){
-  const grp=cat==="Others"&&donutOthers.length?donutOthers:null;
+  const grp=cat==="Other categories"&&donutOthers.length?donutOthers:null;
   const match=c=>grp?grp.includes(c):normCat(c)===cat;
   const out=[];
   data.txns.forEach(t=>{
