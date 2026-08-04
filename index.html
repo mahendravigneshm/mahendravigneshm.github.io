@@ -119,6 +119,10 @@ nav button.on{color:var(--ink);font-weight:600}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.err{background:var(--red)}
 
+.segwrap{display:flex;gap:6px;margin:2px 0 10px;background:var(--soft);padding:4px;border-radius:10px}
+.seg{flex:1;padding:8px 6px;border:none;background:none;border-radius:7px;font-size:13px;
+color:var(--muted);cursor:pointer;font-family:inherit}
+.seg.on{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.06)}
 .verdict{background:var(--card);border:1px solid var(--line);border-radius:12px;
 padding:16px 16px 14px;margin-bottom:12px}
 .verdict .vq{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
@@ -302,6 +306,11 @@ padding:1px 7px;border-radius:4px;margin-bottom:5px;font-weight:600}
   <h2>Spend vs income · last 12 months</h2>
   <div class="card"><div class="chartbox"><canvas id="chTrend"></canvas></div></div>
   <h2>Where the money went</h2>
+  <div class="segwrap" id="donutSeg">
+    <button class="seg on" data-seg="all">All</button>
+    <button class="seg" data-seg="ess">Essential</button>
+    <button class="seg" data-seg="disc">Discretionary</button>
+  </div>
   <div class="card"><div class="chartbox"><canvas id="chDonut"></canvas></div>
     <div id="donutLegend"></div></div>
   <h2>Budget check</h2>
@@ -716,7 +725,10 @@ function renderDash(){
       scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45}},
         y:{ticks:{font:{size:10},callback:v=>"₹"+Math.round(v/1000)+"K"},grid:{color:"#EFEDE6"}}}}});
 
-  const ent=Object.entries(bd).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
+  const segFilter=c=>donutSeg==="all"?true:(donutSeg==="ess"?ESSENTIAL.includes(c):
+      (!ESSENTIAL.includes(c)&&!ONEOFF.includes(c)&&!NONSPEND.includes(c)));
+  const ent=Object.entries(bd).filter(([c,v])=>v>0&&segFilter(c)).sort((a,b)=>b[1]-a[1]);
+  const segTotal=ent.reduce((s,[,v])=>s+v,0);
   const t8=ent.slice(0,8),rest=ent.slice(8).reduce((s,[,v])=>s+v,0);
   const dl=t8.map(e=>e[0]).concat(rest>0?["Other categories"]:[]);
   const dv=t8.map(e=>e[1]).concat(rest>0?[rest]:[]);
@@ -725,7 +737,7 @@ function renderDash(){
     data:{labels:dl,datasets:[{data:dv,backgroundColor:PALETTE,borderWidth:2,borderColor:"#fff"}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:"58%",
       plugins:{legend:{display:false},
-        tooltip:{callbacks:{label:c=>" "+c.label+": "+fmt(c.parsed)+" ("+Math.round(c.parsed/sp*100)+"%)"}}}}});
+        tooltip:{callbacks:{label:c=>" "+c.label+": "+fmt(c.parsed)+" ("+Math.round(c.parsed/segTotal*100)+"%)"}}}}});
   donutOthers=ent.slice(8).map(e=>e[0]);
   const lg=$("donutLegend");
   lg.innerHTML=dv.length?'<div class="lgd">'+dl.map((n,i)=>
@@ -733,10 +745,10 @@ function renderDash(){
        <span class="cv">›</span>
        <span class="sw" style="background:${PALETTE[i%PALETTE.length]}"></span>
        <span class="nm2">${n}</span><span class="am">${fmt(dv[i])}</span>
-       <span class="pc">${sp?Math.round(dv[i]/sp*100):0}%</span></button>
+       <span class="pc">${segTotal?Math.round(dv[i]/segTotal*100):0}%</span></button>
      <div class="lgdet" id="dd-${i}" style="display:none"></div>`).join("")+
     `<div class="lgtot"><span class="cv"></span><span class="sw" style="background:transparent"></span>
-     <span class="nm2"><strong>Total</strong></span><span class="am">${fmt(sp)}</span>
+     <span class="nm2"><strong>Total</strong></span><span class="am">${fmt(segTotal)}</span>
      <span class="pc"></span></div></div>
      <div class="lghint">Tap any category to see the entries behind it.</div>`:"";
   lg.querySelectorAll(".lgi").forEach((b,i)=>b.onclick=()=>toggleDonutCat(b,$("dd-"+i),m));
@@ -956,6 +968,10 @@ $("typeChips").onclick=e=>{const c=e.target.closest(".chip");if(!c)return;etype=
   }
   $("typeHint").textContent=TYPEHINT[etype]||"";};
 $("dashMonth").onchange=renderDash;
+$("donutSeg").onclick=e=>{const b=e.target.closest(".seg");if(!b)return;
+  donutSeg=b.dataset.seg;
+  $("donutSeg").querySelectorAll(".seg").forEach(x=>x.classList.toggle("on",x===b));
+  renderDash();};
 $("trendRange").onchange=renderMatrix;
 $("topN").onchange=renderTopTrend;
 $("smooth").onchange=renderTopTrend;
@@ -1191,6 +1207,7 @@ function renderCatChart(months,idx){
         y:{ticks:{font:{size:10},callback:v=>"₹"+Math.round(v/1000)+"K"},grid:{color:"#EFEDE6"}}}}});
 }
 let donutOthers=[];
+let donutSeg="all";
 function entriesFor(month,cat){
   const grp=cat==="Other categories"&&donutOthers.length?donutOthers:null;
   const match=c=>grp?grp.includes(c):normCat(c)===cat;
