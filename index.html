@@ -419,10 +419,14 @@ padding:1px 7px;border-radius:4px;margin-bottom:5px;font-weight:600}
   <h2>Cash flow</h2>
   <div class="banner" id="cfNote"></div>
   <div class="kpis" style="margin-bottom:6px">
-    <div class="kpi"><div class="lbl">Total in</div><div class="val num" id="cfIn">—</div></div>
-    <div class="kpi"><div class="lbl">Total out</div><div class="val num" id="cfOut">—</div></div>
-    <div class="kpi"><div class="lbl">Net saved</div><div class="val num" id="cfNet">—</div></div>
-    <div class="kpi"><div class="lbl">Savings rate</div><div class="val num" id="cfRate">—</div></div>
+    <div class="kpi"><div class="lbl">Income</div><div class="val num" id="cfIn">—</div></div>
+    <div class="kpi"><div class="lbl">Spent</div><div class="val num" id="cfOut">—</div></div>
+    <div class="kpi"><div class="lbl">Invested</div><div class="val num" id="cfInv">—</div></div>
+    <div class="kpi"><div class="lbl">Left over</div><div class="val num" id="cfNet">—</div></div>
+  </div>
+  <div class="kpis" style="margin-bottom:6px">
+    <div class="kpi"><div class="lbl">Savings rate (incl. investment)</div><div class="val num" id="cfRate">—</div></div>
+    <div class="kpi"><div class="lbl">Invested / income</div><div class="val num" id="cfInvRate">—</div></div>
   </div>
   <h3 style="margin-top:8px">Money in vs out</h3>
   <div class="card"><div class="chartbox tall"><canvas id="chCashflow"></canvas></div></div>
@@ -915,31 +919,41 @@ function renderCashflow(){
   const M=allMonths();
   const start=cashflowStart();
   const win=M.slice(start);
-  const inA=win.map(totalIncome), outA=win.map(totalSpend);
-  const net=inA.map((v,i)=>v-outA[i]);
+  const inA=win.map(totalIncome);
+  const invA=win.map(m=>Math.max(0,spendFor(m,"Investment"))); // money moved into investments
+  const outA=win.map((m,i)=>totalSpend(m)-invA[i]);            // true consumption = spend minus investment
+  // "Left over" = income minus what was spent minus what was invested (cash not yet allocated)
+  const net=inA.map((v,i)=>v-outA[i]-invA[i]);
   let cum=0; const cumA=net.map(n=>cum+=n);
 
-  const tin=inA.reduce((s,v)=>s+v,0), tout=outA.reduce((s,v)=>s+v,0);
+  const tin=inA.reduce((s,v)=>s+v,0);
+  const tout=outA.reduce((s,v)=>s+v,0);
+  const tinv=invA.reduce((s,v)=>s+v,0);
   $("cfIn").textContent=fmt(tin);
   $("cfOut").textContent=fmt(tout);
-  const nsav=tin-tout;
+  $("cfInv").textContent=fmt(tinv);
+  const nsav=tin-tout-tinv;
   const ne=$("cfNet"); ne.textContent=fmt(nsav); ne.className="val num "+(nsav>=0?"pos":"neg");
-  $("cfRate").textContent=tin>0?Math.round(nsav/tin*100)+"%":"—";
+  // Savings rate treats both investment AND leftover as "saved" (not consumed)
+  const savedTotal=tinv+nsav;
+  $("cfRate").textContent=tin>0?Math.round(savedTotal/tin*100)+"%":"—";
+  $("cfInvRate").textContent=tin>0?Math.round(tinv/tin*100)+"%":"—";
 
-  $("cfNote").innerHTML=`Starting from <strong>${win[0]}</strong>, the first month from which income is recorded continuously. Earlier months hold only expense data, so a true cash-flow (in vs out) can't be shown for them.`;
+  $("cfNote").innerHTML=`Starting from <strong>${win[0]}</strong>, the first month with continuous income. Investment is shown as its own flow — money moved into assets you still own, not consumed. "Left over" is income minus spending minus investment.`;
 
   // Bars: in (green) vs out (red)
   if(charts.cf)charts.cf.destroy();
   charts.cf=new Chart($("chCashflow"),{type:"bar",
     data:{labels:win,datasets:[
-      {label:"Money in",data:inA,backgroundColor:"#217A54",borderRadius:3},
-      {label:"Money out",data:outA,backgroundColor:"#B5402C",borderRadius:3}]},
+      {label:"Income",data:inA,backgroundColor:"#217A54",borderRadius:3,stack:"a"},
+      {label:"Spent",data:outA,backgroundColor:"#B5402C",borderRadius:3,stack:"b"},
+      {label:"Invested",data:invA,backgroundColor:"#2E6DA4",borderRadius:3,stack:"b"}]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
       plugins:{legend:{labels:{boxWidth:11,font:{size:11},usePointStyle:true,pointStyle:"circle"}},
         tooltip:{callbacks:{label:c=>" "+c.dataset.label+": "+fmt(c.parsed.y),
-          afterbody:items=>{const i=items[0].dataIndex;return "  Net: "+fmt(net[i])}}}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:60,autoSkip:true,maxTicksLimit:12}},
-        y:{ticks:{font:{size:10},callback:v=>"₹"+Math.round(v/1000)+"K"},grid:{color:"#EFEDE6"}}}}});
+          afterbody:items=>{const i=items[0].dataIndex;return "  Left over: "+fmt(net[i])}}}},
+      scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:9},maxRotation:60,autoSkip:true,maxTicksLimit:12}},
+        y:{stacked:true,ticks:{font:{size:10},callback:v=>"₹"+Math.round(v/1000)+"K"},grid:{color:"#EFEDE6"}}}}});
 
   // Cumulative running balance
   if(charts.cum)charts.cum.destroy();
@@ -954,24 +968,26 @@ function renderCashflow(){
         y:{ticks:{font:{size:10},callback:v=>"₹"+Math.round(v/1000)+"K"},grid:{color:"#EFEDE6"}}}}});
 
   const cend=cumA[cumA.length-1];
-  $("cfCumNote").innerHTML="Cumulative money in minus money out since "+win[0]+", ending at <strong>"+fmt(cend)+"</strong>. "+
-    (cend<0?"A negative balance here reflects that recorded spending has exceeded recorded income over this window — partly because some income (cash, transfers) may go untagged.":"");
+  $("cfCumNote").innerHTML="Income minus spending minus investment since "+win[0]+", ending at <strong>"+fmt(cend)+"</strong>. This is uncommitted cash left after living costs and investing — money invested is not a loss, it has moved into assets you still hold.";
 
   // Table
   let html='<table class="mtx"><thead><tr><th class="nm">Month</th>'+
-    '<th style="text-align:right">In</th><th style="text-align:right">Out</th>'+
-    '<th style="text-align:right">Net</th><th style="text-align:right">Balance</th></tr></thead><tbody>';
+    '<th style="text-align:right">Income</th><th style="text-align:right">Spent</th>'+
+    '<th style="text-align:right">Invested</th><th style="text-align:right">Left over</th>'+
+    '<th style="text-align:right">Cum.</th></tr></thead><tbody>';
   win.forEach((m,i)=>{
     const nt=net[i];
     html+=`<tr><td class="nm">${m}</td>`+
       `<td class="c" style="color:#217A54">${Math.round(inA[i]).toLocaleString("en-IN")}</td>`+
       `<td class="c" style="color:#B5402C">${Math.round(outA[i]).toLocaleString("en-IN")}</td>`+
+      `<td class="c" style="color:#2E6DA4">${Math.round(invA[i]).toLocaleString("en-IN")}</td>`+
       `<td class="c" style="font-weight:700;color:${nt>=0?"#217A54":"#B5402C"}">${nt>=0?"+":""}${Math.round(nt).toLocaleString("en-IN")}</td>`+
       `<td class="c">${Math.round(cumA[i]).toLocaleString("en-IN")}</td></tr>`;
   });
   const trow=`<tr><td class="nm">Total</td>`+
     `<td class="c" style="color:#217A54;font-weight:700">${Math.round(tin).toLocaleString("en-IN")}</td>`+
     `<td class="c" style="color:#B5402C;font-weight:700">${Math.round(tout).toLocaleString("en-IN")}</td>`+
+    `<td class="c" style="color:#2E6DA4;font-weight:700">${Math.round(tinv).toLocaleString("en-IN")}</td>`+
     `<td class="c" style="font-weight:700;color:${nsav>=0?"#217A54":"#B5402C"}">${nsav>=0?"+":""}${Math.round(nsav).toLocaleString("en-IN")}</td>`+
     `<td class="c"></td></tr>`;
   $("cfTable").innerHTML=html+'</tbody><tfoot>'+trow+'</tfoot></table>';
