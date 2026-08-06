@@ -362,6 +362,9 @@ padding:1px 7px;border-radius:4px;margin-bottom:5px;font-weight:600}
     <select id="fMonth"><option value="">All months</option></select>
     <select id="fWho"><option value="">Everyone</option><option>Mahendra</option><option>Vidhya</option><option value="Bank">Bank history</option></select>
     <select id="fCat"><option value="">All categories</option></select>
+    <select id="fType"><option value="">All entries</option>
+      <option value="credit">Credits &amp; refunds only</option>
+      <option value="expense">Expenses only</option></select>
   </div>
   <div class="card" id="editPanel" style="display:none"></div>
   <div id="filterSum"></div>
@@ -798,12 +801,17 @@ function mergedRows(){
   const live=data.txns.map(t=>({src:"app",date:t.date,cat:t.type==="income"?"Income":t.cat,
     amt:Math.abs(t.amt),credit:t.type==="income"||t.amt<0,
     who:t.who,mode:t.mode,note:t.note,id:t.id}));
-  const bank=HTX.map((h,i)=>({src:"bank",date:h[0],cat:h[1],amt:h[2]>0?h[2]:h[3],
-    credit:h[2]===0&&h[3]>0,who:"Bank",mode:"",note:h[4],id:"h"+i}));
+  const bank=HTX.map((h,i)=>{
+    const isCredit = h[2]<0 || (h[2]===0 && h[3]>0);
+    const amt = h[2]<0 ? -h[2] : (h[2]>0 ? h[2] : h[3]);
+    return {src:"bank",date:h[0],cat:h[1],amt,credit:isCredit,who:"Bank",mode:"",note:h[4],id:"h"+i};
+  });
+  const ft=$("fType")?$("fType").value:"";
   return live.concat(bank)
     .filter(t=>!fm||monthLabel(t.date)===fm)
     .filter(t=>!fw||(fw==="Bank"?t.src==="bank":(fw==="Vidhya"?t.who!=="Mahendra"&&t.src==="app":t.who===fw)))
-    .filter(t=>!fc||t.cat===fc)
+    .filter(t=>!fc||normCat(t.cat)===fc)
+    .filter(t=>!ft||(ft==="credit"?t.credit:!t.credit))
     .sort((a,b)=>b.date.localeCompare(a.date));
 }
 function renderTxns(keep){
@@ -1094,6 +1102,7 @@ $("trendCat").onchange=()=>renderCatChart(trendMonths(),buildMatrix(trendMonths(
 $("fMonth").onchange=()=>renderTxns();
 $("fWho").onchange=()=>renderTxns();
 $("fCat").onchange=()=>renderTxns();
+$("fType").onchange=()=>renderTxns();
 
 $("saveBtn").onclick=async()=>{
   const raw=parseFloat($("amount").value);
