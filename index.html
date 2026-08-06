@@ -201,6 +201,7 @@ padding:12px 15px;margin-bottom:12px}
 #filterSum .fv{font-family:"Fraunces",Georgia,serif;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
 #filterSum .fsub{font-size:11.5px;color:#B9C2CC;margin-top:4px;display:flex;gap:14px;flex-wrap:wrap}
 .txn .ed{background:none;border:none;color:#9AA5B1;font-size:15px;cursor:pointer;padding:4px 5px}
+.txn .rc{color:#B08A4F;font-size:14px}
 #insightBox{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:6px 0 14px}
 #insightBox summary{padding:14px;cursor:pointer;font-family:"Fraunces",Georgia,serif;font-weight:600;
 font-size:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;list-style:none}
@@ -545,6 +546,7 @@ const CATS=["Home","Rent","Insurance","Investment","Marriage","Education","Mobil
 "Lending","Recharge","Medical","Gas Cylinder","Reimburse","Income","Others"];
 const MERGE_INTO_OTHERS=["Water","Repair Charges","Fee","Bike service","Home needs","Other"];
 function normCat(c){return MERGE_INTO_OTHERS.includes(c)?"Others":c;}
+function htxCat(i,rawCat){const o=data.catOverrides&&data.catOverrides["h"+i];return o||rawCat;}
 const DEFAULT_BUDGETS={Home:25000,Rent:8000,Insurance:2500,Investment:20000,Marriage:10000,
 Food:3500,Grocery:3500,Shopping:4000,Travel:3000,Fuel:2500,Snacks:2000,Cash:1000,Gift:1000,
 Selfcare:500,Movie:500,"Home needs":500,Recharge:1000,Medical:1500,"Bike service":500,
@@ -559,7 +561,7 @@ const FILE_NAME="vignesh-family-ledger.json";
 const SCOPE="https://www.googleapis.com/auth/drive";
 
 /* ══════ STATE ══════ */
-let data={txns:[],budgets:{...DEFAULT_BUDGETS},deleted:[],budgetsTs:0,hist:null,htx:[]};
+let data={txns:[],budgets:{...DEFAULT_BUDGETS},deleted:[],budgetsTs:0,hist:null,htx:[],catOverrides:{}};
 let who="Mahendra", etype="expense", charts={}, txnPage=1;
 const PAGE=60;
 let token=null, tokenClient=null, fileId=null, syncing=false;
@@ -591,7 +593,8 @@ function merge(a,b){
     budgets:bTs>=aTs?(b.budgets||a.budgets):(a.budgets||b.budgets),
     budgetsTs:Math.max(aTs,bTs), deleted:[...del],
     hist:(b.hist&&b.hist.months)?b.hist:(a.hist||null),
-    htx:(b.htx&&b.htx.length)?b.htx:(a.htx||[])};
+    htx:(b.htx&&b.htx.length)?b.htx:(a.htx||[]),
+    catOverrides:{...(a.catOverrides||{}),...(b.catOverrides||{})}};
 }
 
 /* ══════ GOOGLE DRIVE ══════ */
@@ -804,7 +807,7 @@ function mergedRows(){
   const bank=HTX.map((h,i)=>{
     const isCredit = h[2]<0 || (h[2]===0 && h[3]>0);
     const amt = h[2]<0 ? -h[2] : (h[2]>0 ? h[2] : h[3]);
-    return {src:"bank",date:h[0],cat:h[1],amt,credit:isCredit,who:"Bank",mode:"",note:h[4],id:"h"+i};
+    return {src:"bank",date:h[0],cat:htxCat(i,h[1]),amt,credit:isCredit,who:"Bank",mode:"",note:h[4],id:"h"+i};
   });
   const ft=$("fType")?$("fType").value:"";
   return live.concat(bank)
@@ -830,7 +833,9 @@ function renderTxns(keep){
       <div class="mid"><div class="cat">${t.cat}</div>
       <div class="meta">${[ds,t.mode,t.note].filter(Boolean).join(" · ")}</div></div>
       <div class="amt ${t.credit?"pos":""} num">${t.credit?"+":""}${fmt(t.amt)}</div>
-      ${t.src==="app"?`<button class="ed" data-eid="${t.id}" aria-label="Edit">✎</button><button class="del" data-id="${t.id}" aria-label="Delete">✕</button>`:`<span style="width:58px"></span>`}`;
+      ${t.src==="app"
+        ?`<button class="ed" data-eid="${t.id}" aria-label="Edit">✎</button><button class="del" data-id="${t.id}" aria-label="Delete">✕</button>`
+        :`<button class="ed rc" data-rcat="${t.id}" data-rc-cat="${t.cat}" data-rc-note="${(t.note||"").replace(/"/g,"&quot;")}" data-rc-date="${t.date}" data-rc-amt="${t.amt}" data-rc-credit="${t.credit?1:0}" aria-label="Recategorise">↹</button><span style="width:29px"></span>`}`;
     frag.appendChild(d);
   });
   list.appendChild(frag);
@@ -841,7 +846,8 @@ function renderTxns(keep){
     b.onclick=()=>{txnPage++;renderTxns(true)};
     list.appendChild(b);
   }
-  list.querySelectorAll(".ed").forEach(b=>b.onclick=()=>openEdit(+b.dataset.eid));
+  list.querySelectorAll(".ed:not(.rc)").forEach(b=>b.onclick=()=>openEdit(+b.dataset.eid));
+  list.querySelectorAll(".rc").forEach(b=>b.onclick=()=>openRecat(b.dataset));
   list.querySelectorAll(".del").forEach(b=>b.onclick=async()=>{
     const id=+b.dataset.id;
     data.txns=data.txns.filter(t=>t.id!==id);
@@ -850,6 +856,38 @@ function renderTxns(keep){
     if(token)try{await syncNow()}catch(e){}
     toast("Entry deleted");
   });
+}
+function openRecat(ds){
+  const id=ds.rcat, curCat=ds.rcCat, note=ds.rcNote||"", date=ds.rcDate, amt=+ds.rcAmt;
+  const p=$("editPanel");
+  p.style.display="block";
+  const d=new Date(date+"T00:00:00");
+  p.innerHTML=`
+    <div style="font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:16px;margin-bottom:2px">Recategorise bank entry</div>
+    <div class="note" style="margin:0 0 8px">${d.getDate()} ${MB[d.getMonth()]} ${String(d.getFullYear()).slice(2)} · ${fmt(amt)}${note?" · "+note:""}</div>
+    <div class="note" style="margin:0 0 10px">Amount and date stay locked to the bank record. Only the category changes.</div>
+    <label>Category</label>
+    <select id="rcCat">${CATS.filter(c=>c!=="Income").map(c=>`<option${normCat(c)===normCat(curCat)?" selected":""}>${c}</option>`).join("")}</select>
+    <div class="editbar">
+      <button class="btn" id="rcSave">Save category</button>
+      <button class="btn ghost" id="rcReset">Reset to original</button>
+      <button class="btn ghost" id="rcCancel">Cancel</button>
+    </div>`;
+  p.scrollIntoView({behavior:"smooth",block:"nearest"});
+  $("rcCancel").onclick=()=>{p.style.display="none";p.innerHTML=""};
+  $("rcReset").onclick=async()=>{
+    if(data.catOverrides)delete data.catOverrides[id];
+    p.style.display="none";p.innerHTML="";
+    saveLocal();refreshAll();toast("Reset to original category");
+    if(token)try{await syncNow()}catch(e){}
+  };
+  $("rcSave").onclick=async()=>{
+    if(!data.catOverrides)data.catOverrides={};
+    data.catOverrides[id]=$("rcCat").value;
+    p.style.display="none";p.innerHTML="";
+    saveLocal();refreshAll();toast("Category updated");
+    if(token)try{await syncNow()}catch(e){}
+  };
 }
 function openEdit(id){
   const t=data.txns.find(x=>x.id===id);if(!t)return;
@@ -1161,6 +1199,14 @@ function buildMatrix(months){
     const hi=HIST.months.indexOf(m);
     if(hi<0)return;
     for(const c in HIST.spend){const v=HIST.spend[c][hi];if(v)ensure(normCat(c))[i]+=v}
+    // apply per-entry recategorisations for this month
+    if(data.catOverrides)HTX.forEach((x,xi)=>{
+      const ov=data.catOverrides["h"+xi];
+      if(ov&&monthLabel(x[0])===m&&x[2]>0){
+        ensure(normCat(x[1]))[i]-=x[2];   // remove from original
+        ensure(normCat(ov))[i]+=x[2];     // add to new
+      }
+    });
   });
   data.txns.forEach(t=>{
     if(t.type==="income")return;
@@ -1339,9 +1385,10 @@ function entriesFor(month,cat){
     if(t.type!=="income"&&match(t.cat)&&monthLabel(t.date)===month)
       out.push({date:t.date,amt:t.amt,note:t.note||t.mode||"",who:t.who,src:"app",cat:normCat(t.cat)});
   });
-  HTX.forEach(x=>{
-    if(match(x[1])&&monthLabel(x[0])===month&&x[2]>0)
-      out.push({date:x[0],amt:x[2],note:x[4]||"",who:"Bank",src:"bank",cat:normCat(x[1])});
+  HTX.forEach((x,xi)=>{
+    const ec=htxCat(xi,x[1]);
+    if(match(ec)&&monthLabel(x[0])===month&&x[2]>0)
+      out.push({date:x[0],amt:x[2],note:x[4]||"",who:"Bank",src:"bank",cat:normCat(ec)});
   });
   return out.sort((a,b)=>b.amt-a.amt);
 }
